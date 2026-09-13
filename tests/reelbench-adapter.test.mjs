@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { mapGateOutput, runAnalyzeSeed, reviewSyncCommand } from '../src/integrations/reelbench-adapter.mjs';
+import { assertReviewInput, mapGateOutput, runAnalyzeSeed, reviewSyncCommand } from '../src/integrations/reelbench-adapter.mjs';
 
 test('analyze seed invokes the original upstream script as argv and persists raw stdout', () => {
   const out = mkdtempSync(join(tmpdir(), 'reelbench-adapter-'));
@@ -33,4 +33,9 @@ test('review sync command targets original video-sync export without a shell', (
   assert.match(spec.args[0], /skills\/video-sync\/scripts\/video-sync\.mjs$/);
   assert.deepEqual(spec.args.slice(1, 4), ['export', '/tmp/shots.json', '--video']);
   assert.equal(spec.options.shell, false);
+});
+
+test('review sync rejects a video without the normalized audio track that bounds upstream output', () => {
+  assert.throws(() => assertReviewInput({ hasAudio: false }), /audio track/);
+  assert.doesNotThrow(() => assertReviewInput({ hasAudio: true }));
 });

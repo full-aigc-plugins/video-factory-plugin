@@ -8,7 +8,7 @@ import { recoverySummary, runApproved } from './orchestrator.mjs';
 import { canonicalHash, validateVideoPlan } from './plan.mjs';
 import { probeCapabilities } from './probe.mjs';
 import { readLedger } from './job-ledger.mjs';
-import { reviewSyncCommand, runAnalyzeSeed } from './integrations/reelbench-adapter.mjs';
+import { assertReviewInput, reviewSyncCommand, runAnalyzeSeed } from './integrations/reelbench-adapter.mjs';
 
 const HELP = `vedio-factory — automatic editing and verified video composition
 
@@ -51,6 +51,7 @@ export async function main(argv, io = { stdout: process.stdout, stderr: process.
       io.stdout.write(`${JSON.stringify(runAnalyzeSeed(argv[1], out), null, 2)}\n`); return 0;
     }
     if (command === 'review-sync') {
+      assertReviewInput(await collectMedia(argv[1], { provenanceOk: true }));
       const output = resolve(String(flag(argv, '-o', 'review-sync.mp4')));
       const panels = resolve(String(flag(argv, '--panels', 'review-panels')));
       const spec = reviewSyncCommand(argv[1], argv[2], output, panels);

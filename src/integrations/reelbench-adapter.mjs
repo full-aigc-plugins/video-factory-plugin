@@ -41,3 +41,7 @@ export function reviewSyncCommand(video, shotsPath, output, panels, node = proce
     options: { shell: false, encoding: 'utf8', maxBuffer: 1 << 28 },
   };
 }
+
+export function assertReviewInput(receipt) {
+  if (receipt?.hasAudio !== true) throw new Error('video-sync requires a normalized audio track to bound output duration');
+}
