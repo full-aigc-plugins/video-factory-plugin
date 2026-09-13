@@ -39,3 +39,18 @@ export function reviseEditDecision(previous, changes) {
   next.revision = previous.revision + 1;
   return { decision: next, diff: diffEditDecision(previous, next) };
 }
+
+export function analyzeEditPolicy(decision) {
+  const clips = decision.clips ?? [];
+  const duplicate = clips.some((clip, index) => index > 0
+    && clip.assetId === clips[index - 1].assetId
+    && clip.sourceInTicks === clips[index - 1].sourceInTicks
+    && clip.sourceOutTicks === clips[index - 1].sourceOutTicks);
+  const durations = clips.map((clip) => clip.sourceOutTicks - clip.sourceInTicks);
+  let rhythm = 'SKIPPED';
+  if (durations.length >= 6) {
+    const average = durations.reduce((sum, value) => sum + value, 0) / durations.length;
+    rhythm = Math.max(...durations) - Math.min(...durations) <= average * 0.1 ? 'FAIL' : 'PASS';
+  }
+  return { duplicateShots: duplicate ? 'FAIL' : 'PASS', rhythm };
+}

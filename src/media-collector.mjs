@@ -18,7 +18,9 @@ export async function collectMedia(path, { provenanceOk = false, timelineOk = fa
     width: Number(video.width), height: Number(video.height), fps: den ? num / den : 0,
     hasAudio: Boolean(audio), streamCount: probe.streams?.length ?? 0,
     videoCodec: video.codec_name ?? '', pixelFormat: video.pix_fmt ?? '',
+    videoStartSeconds: Number(video.start_time ?? 0),
     audioCodec: audio?.codec_name ?? '', audioSampleRate: Number(audio?.sample_rate ?? 0), audioChannels: Number(audio?.channels ?? 0),
+    audioStartSeconds: audio ? Number(audio.start_time ?? 0) : 0,
     container: probe.format?.format_name ?? '', exists: true, hashVerified: firstHash === secondHash,
     decodeOk: true, provenanceOk, timelineOk,
   };

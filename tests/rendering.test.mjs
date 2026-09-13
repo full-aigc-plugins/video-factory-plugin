@@ -87,6 +87,7 @@ test('required media failure outranks advisory findings and human approval', () 
   assert.equal(scores.decision, 'fail');
   assert.deepEqual(scores.failedRequired.sort(), ['audio', 'audioFormat', 'decode']);
   assert.equal(scores.gates.find((gate) => gate.id === 'blackFrames').status, 'PASS');
+  assert.equal(scores.gates.find((gate) => gate.id === 'avSync').status, 'NOT_RUN');
 });
 
 test('every required media gate can be independently broken', () => {

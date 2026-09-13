@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { verifyApproval, quotePlan } from './approval.mjs';
 import { assembleVideo } from './assembler.mjs';
-import { validateEditDecision } from './edit-decision.mjs';
+import { analyzeEditPolicy, validateEditDecision } from './edit-decision.mjs';
 import { effectiveAssemblyDuration, outputProfile, segmentKey } from './ffmpeg-compiler.mjs';
 import { renderFinal } from './final-renderer.mjs';
 import { failSegment, markSegment, newJob, pendingSegments, readLedger, transition, writeLedger } from './job-ledger.mjs';
@@ -91,8 +91,11 @@ export async function runApproved({ planPath, approvalPath, ledgerPath, inputRoo
   const evidence = analyzeMedia(receipt.path, {
     durationSeconds,
     hasAudio: receipt.hasAudio,
+    videoStartSeconds: receipt.videoStartSeconds,
+    audioStartSeconds: receipt.audioStartSeconds,
     subtitlePath: plan.output.subtitleAssetId ? assets[plan.output.subtitleAssetId].path : null,
   });
+  Object.assign(evidence, analyzeEditPolicy(plan.editDecision));
   const scores = evaluateMedia({ output: { ...profile, durationSeconds, requireAudio: Boolean(plan.output.requireAudio) } }, receipt, evidence, 'unlabeled');
   job = transition(job, scores.failedRequired.length ? 'Failed' : 'ReviewReady', 'media evaluation complete');
   if (!scores.failedRequired.length && stage === 'final') job = transition(job, 'Completed', 'approved final artifact complete');
