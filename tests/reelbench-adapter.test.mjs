@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { assertReviewInput, mapGateOutput, runAnalyzeEvidence, runAnalyzeSeed, reviewSyncCommand } from '../src/integrations/reelbench-adapter.mjs';
+import { assertReviewInput, mapGateOutput, runAnalyzeEvidence, runAnalyzeSeed, runFinalizeAnalysis, reviewSyncCommand } from '../src/integrations/reelbench-adapter.mjs';
 import { validateSchemaInstance } from '../src/schema-lite.mjs';
 
 test('analyze seed invokes the original upstream script as argv and persists raw stdout', () => {
@@ -58,4 +58,27 @@ test('analysis evidence runs original seed, frames and both contact sheets befor
   assert.ok(manifest.artifacts.some((artifact) => artifact.path === 'shots.json' && /^[a-f0-9]{64}$/.test(artifact.sha256)));
   const evidenceSchema = JSON.parse(readFileSync('schemas/reelbench_evidence.schema.json', 'utf8'));
   assert.deepEqual(validateSchemaInstance(evidenceSchema, evidence), []);
+});
+
+test('finalize analysis invokes original validate and both report render modes', () => {
+  const root = mkdtempSync(join(tmpdir(), 'reelbench-finalize-'));
+  const shotsPath = join(root, 'shots.json');
+  const trackPath = join(root, 'track.json');
+  const framesPath = join(root, 'frames');
+  writeFileSync(shotsPath, '{}');
+  writeFileSync(trackPath, '{}');
+  const calls = [];
+  const runner = (bin, args, options) => {
+    calls.push({ bin, args, options });
+    if (args[1] === 'validate') return { status: 0, stdout: '✅ 时间轴连续\n⊘ 人物对账', stderr: '' };
+    return { status: 0, stdout: args.includes('--md') ? '# report' : '<html>report</html>', stderr: '' };
+  };
+  const result = runFinalizeAnalysis({ shotsPath, trackPath, framesPath, outputDir: root, runner, node: '/usr/bin/node' });
+  assert.deepEqual(calls.map((call) => call.args[1]), ['validate', 'render', 'render']);
+  assert.equal(result.status, 'PASS');
+  assert.equal(result.gates[1].status, 'SKIPPED');
+  assert.equal(readFileSync(result.markdownPath, 'utf8'), '# report');
+  assert.equal(readFileSync(result.htmlPath, 'utf8'), '<html>report</html>');
+  const evidenceSchema = JSON.parse(readFileSync('schemas/reelbench_evidence.schema.json', 'utf8'));
+  assert.deepEqual(validateSchemaInstance(evidenceSchema, result), []);
 });

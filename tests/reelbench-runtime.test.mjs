@@ -4,7 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { runAnalyzeEvidence, runReviewSync } from '../src/integrations/reelbench-adapter.mjs';
+import { runAnalyzeEvidence, runFinalizeAnalysis, runReviewSync } from '../src/integrations/reelbench-adapter.mjs';
 
 test('original ReelBench scripts analyze real media and produce a synchronized review video', { timeout: 60000 }, async () => {
   const root = mkdtempSync(join(tmpdir(), 'reelbench-real-'));
@@ -26,6 +26,9 @@ test('original ReelBench scripts analyze real media and produce a synchronized r
   };
   const shotsPath = join(root, 'shots.json');
   writeFileSync(shotsPath, JSON.stringify(shots));
+  const finalized = runFinalizeAnalysis({ shotsPath, trackPath: evidence.trackPath, framesPath: evidence.framesPath, outputDir: join(root, 'analysis'), video });
+  assert.equal(finalized.status, 'PASS');
+  assert.ok(existsSync(finalized.htmlPath));
   const output = join(root, 'review.mp4');
   const result = await runReviewSync({ video, shotsPath, output, panels: join(root, 'panels'), evidenceDir: join(root, 'review-evidence') });
   assert.ok(existsSync(output));

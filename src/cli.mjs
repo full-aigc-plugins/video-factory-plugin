@@ -8,13 +8,14 @@ import { canonicalHash, validateVideoPlan } from './plan.mjs';
 import { probeCapabilities } from './probe.mjs';
 import { readLedger, recordHumanDecision, writeLedger } from './job-ledger.mjs';
 import { effectiveAssemblyDuration, outputProfile } from './ffmpeg-compiler.mjs';
-import { assertReviewInput, runAnalyzeEvidence, runReviewSync } from './integrations/reelbench-adapter.mjs';
+import { assertReviewInput, runAnalyzeEvidence, runFinalizeAnalysis, runReviewSync } from './integrations/reelbench-adapter.mjs';
 
 const HELP = `video-factory — automatic editing and verified video composition
 
 Commands:
   probe
   analyze <video>
+  analyze-finalize <shots.json> --track <track.json> --frames <frames-dir>
   validate-plan <plan.json>
   quote <plan.json> --stage rough|final
   run <plan.json> --stage rough|final --approval <approval.json>
@@ -50,6 +51,18 @@ export async function main(argv, io = { stdout: process.stdout, stderr: process.
     if (command === 'analyze') {
       const out = resolve(String(flag(argv, '--out', 'reelbench-analysis')));
       io.stdout.write(`${JSON.stringify(runAnalyzeEvidence(argv[1], out), null, 2)}\n`); return 0;
+    }
+    if (command === 'analyze-finalize') {
+      const shotsPath = resolve(argv[1]);
+      const outputDir = resolve(String(flag(argv, '--out', dirname(shotsPath))));
+      const result = runFinalizeAnalysis({
+        shotsPath,
+        trackPath: resolve(String(flag(argv, '--track', `${outputDir}/track.json`))),
+        framesPath: resolve(String(flag(argv, '--frames', `${outputDir}/frames`))),
+        outputDir,
+        video: flag(argv, '--video'),
+      });
+      io.stdout.write(`${JSON.stringify(result, null, 2)}\n`); return 0;
     }
     if (command === 'review-sync') {
       assertReviewInput(await collectMedia(argv[1], { provenanceOk: true }));

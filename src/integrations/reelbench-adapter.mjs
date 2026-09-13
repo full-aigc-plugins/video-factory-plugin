@@ -12,6 +12,22 @@ const UPSTREAM_REVISION = '75520c7b32ab5af8b22c5e4f79705efbbc0d8e07';
 
 const defaultRunner = (bin, args, options) => spawnSync(bin, args, { ...options, encoding: 'utf8' });
 
+const visitFiles = (directory) => existsSync(directory) ? readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+  const path = join(directory, entry.name);
+  return entry.isDirectory() ? visitFiles(path) : entry.isFile() && entry.name !== 'reelbench-evidence.json' ? [path] : [];
+}) : [];
+
+const writeEvidenceManifest = (outputDir, status, gates = []) => {
+  const artifacts = visitFiles(outputDir).sort().map((path) => ({
+    path: relative(outputDir, path),
+    bytes: statSync(path).size,
+    sha256: createHash('sha256').update(readFileSync(path)).digest('hex'),
+  }));
+  const manifestPath = join(outputDir, 'reelbench-evidence.json');
+  writeFileSync(manifestPath, `${JSON.stringify({ schemaVersion: '1.0.0', upstreamRevision: UPSTREAM_REVISION, status, gates, artifacts }, null, 2)}\n`);
+  return manifestPath;
+};
+
 export function runAnalyzeSeed(video, outputDir, { runner = defaultRunner, node = process.execPath, threshold = 0.3 } = {}) {
   mkdirSync(outputDir, { recursive: true });
   const shotsPath = join(outputDir, 'shots.json');
@@ -43,18 +59,40 @@ export function runAnalyzeEvidence(video, outputDir, { runner = defaultRunner, n
   }
   const evidenceLogPath = join(outputDir, 'evidence.stderr.txt');
   writeFileSync(evidenceLogPath, logs.join('\n'));
-  const visit = (directory) => existsSync(directory) ? readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(directory, entry.name);
-    return entry.isDirectory() ? visit(path) : entry.isFile() ? [path] : [];
-  }) : [];
-  const artifacts = visit(outputDir).sort().map((path) => ({
-    path: relative(outputDir, path),
-    bytes: statSync(path).size,
-    sha256: createHash('sha256').update(readFileSync(path)).digest('hex'),
-  }));
-  const manifestPath = join(outputDir, 'reelbench-evidence.json');
-  writeFileSync(manifestPath, `${JSON.stringify({ schemaVersion: '1.0.0', upstreamRevision: UPSTREAM_REVISION, status: 'AWAITING_CODEX_ANNOTATION', artifacts }, null, 2)}\n`);
+  const manifestPath = writeEvidenceManifest(outputDir, 'AWAITING_CODEX_ANNOTATION');
   return { ...evidence, sheetsPath, evidenceLogPath, manifestPath, upstreamRevision: UPSTREAM_REVISION, status: 'AWAITING_CODEX_ANNOTATION' };
+}
+
+export function runFinalizeAnalysis({ shotsPath, trackPath, framesPath, outputDir, video, runner = defaultRunner, node = process.execPath }) {
+  mkdirSync(outputDir, { recursive: true });
+  const validation = validationCommand(shotsPath, trackPath, framesPath, node);
+  const checked = runner(validation.bin, validation.args, validation.options);
+  const validationStdoutPath = join(outputDir, 'validate.stdout.txt');
+  const validationStderrPath = join(outputDir, 'validate.stderr.txt');
+  writeFileSync(validationStdoutPath, checked.stdout ?? '');
+  writeFileSync(validationStderrPath, checked.stderr ?? '');
+  const gates = mapGateOutput(`${checked.stdout ?? ''}\n${checked.stderr ?? ''}`);
+  if (checked.error) throw new Error(`ReelBench validate unavailable: ${checked.error.message}`);
+  if (checked.status !== 0) {
+    writeEvidenceManifest(outputDir, 'FAIL', gates);
+    throw new Error(`ReelBench validate failed with exit ${checked.status}`);
+  }
+  const render = (mode) => runner(node, [SHOTS_SCRIPT, 'render', shotsPath, `--${mode}`, '--track', trackPath, '--frames', framesPath, ...(video ? ['--video', video] : [])], {
+    cwd: outputDir, shell: false, encoding: 'utf8', maxBuffer: 1 << 28,
+  });
+  const markdown = render('md');
+  const html = render('html');
+  if (markdown.status !== 0 || html.status !== 0) throw new Error('ReelBench report render failed');
+  const markdownPath = join(outputDir, 'shots.md');
+  const htmlPath = join(outputDir, 'shots-report.html');
+  writeFileSync(markdownPath, markdown.stdout ?? '');
+  writeFileSync(htmlPath, html.stdout ?? '');
+  const manifestPath = writeEvidenceManifest(outputDir, 'PASS', gates);
+  return {
+    schemaVersion: '1.0.0', shotsPath, trackPath, framesPath, sheetsPath: join(outputDir, 'sheets'),
+    stderrPath: validationStderrPath, evidenceLogPath: validationStdoutPath, manifestPath,
+    upstreamRevision: UPSTREAM_REVISION, status: 'PASS', gates, markdownPath, htmlPath,
+  };
 }
 
 export function mapGateOutput(output) {
