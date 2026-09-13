@@ -1,3 +1,15 @@
+import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { quotePlan } from './approval.mjs';
+import { collectMedia } from './media-collector.mjs';
+import { evaluateMedia } from './media-evaluator.mjs';
+import { recoverySummary, runApproved } from './orchestrator.mjs';
+import { canonicalHash, validateVideoPlan } from './plan.mjs';
+import { probeCapabilities } from './probe.mjs';
+import { readLedger } from './job-ledger.mjs';
+import { reviewSyncCommand, runAnalyzeSeed } from './integrations/reelbench-adapter.mjs';
+
 const HELP = `vedio-factory — automatic editing and verified video composition
 
 Commands:
@@ -12,12 +24,58 @@ Commands:
   recover <ledger.json>
 `;
 
-export async function main(argv) {
+const flag = (argv, name, fallback = null) => {
+  const index = argv.indexOf(name);
+  return index < 0 ? fallback : argv[index + 1] ?? true;
+};
+const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
+
+export async function main(argv, io = { stdout: process.stdout, stderr: process.stderr }) {
   const [command] = argv;
   if (!command || command === '--help' || command === '-h') {
-    process.stdout.write(HELP);
+    io.stdout.write(HELP);
     return 0;
   }
-  process.stderr.write(`Command not implemented yet: ${command}\n`);
-  return 2;
+  try {
+    if (command === 'probe') { io.stdout.write(`${JSON.stringify(probeCapabilities(), null, 2)}\n`); return 0; }
+    if (command === 'validate-plan') {
+      const plan = validateVideoPlan(readJson(argv[1]));
+      io.stdout.write(`${JSON.stringify({ valid: true, planHash: canonicalHash(plan) }, null, 2)}\n`); return 0;
+    }
+    if (command === 'quote') {
+      const plan = validateVideoPlan(readJson(argv[1]));
+      io.stdout.write(`${JSON.stringify(quotePlan(plan, flag(argv, '--stage', 'rough'), 1), null, 2)}\n`); return 0;
+    }
+    if (command === 'analyze') {
+      const out = resolve(String(flag(argv, '--out', 'reelbench-analysis')));
+      io.stdout.write(`${JSON.stringify(runAnalyzeSeed(argv[1], out), null, 2)}\n`); return 0;
+    }
+    if (command === 'review-sync') {
+      const output = resolve(String(flag(argv, '-o', 'review-sync.mp4')));
+      const panels = resolve(String(flag(argv, '--panels', 'review-panels')));
+      const spec = reviewSyncCommand(argv[1], argv[2], output, panels);
+      const result = spawnSync(spec.bin, spec.args, spec.options);
+      if (result.status !== 0) throw new Error(`review sync failed: ${result.stderr ?? ''}`);
+      io.stdout.write(`${JSON.stringify({ path: output }, null, 2)}\n`); return 0;
+    }
+    if (command === 'run') {
+      const planPath = resolve(argv[1]);
+      const root = dirname(planPath);
+      const result = await runApproved({ planPath, approvalPath: resolve(String(flag(argv, '--approval'))), ledgerPath: resolve(String(flag(argv, '--ledger', `${planPath}.job.json`))), inputRoot: resolve(String(flag(argv, '--input-root', root))), workRoot: resolve(String(flag(argv, '--work-root', `${root}/.vedio-work`))), outputRoot: resolve(String(flag(argv, '--output-root', `${root}/output`))), stage: String(flag(argv, '--stage', 'rough')) });
+      io.stdout.write(`${JSON.stringify(result, null, 2)}\n`); return 0;
+    }
+    if (command === 'status' || command === 'recover') {
+      const job = readLedger(argv[1]);
+      io.stdout.write(`${JSON.stringify(command === 'status' ? job : recoverySummary(job), null, 2)}\n`); return 0;
+    }
+    if (command === 'evaluate') {
+      const receipt = await collectMedia(argv[1], { provenanceOk: true });
+      const plan = readJson(argv[2]);
+      io.stdout.write(`${JSON.stringify(evaluateMedia(plan, receipt), null, 2)}\n`); return 0;
+    }
+    io.stderr.write(`Unknown command: ${command}\n`); return 2;
+  } catch (error) {
+    io.stderr.write(`${error.message}\n`);
+    return /only local_composition/.test(error.message) ? 3 : /approval/.test(error.message) ? 4 : 1;
+  }
 }
