@@ -133,7 +133,7 @@ flowchart LR
 
 ## 完成门禁
 
-- [x] 59 项项目测试通过，0 失败。
+- [x] 60 项项目测试通过，0 失败。
 - [x] 27/27 ReelBench 文件双哈希一致，449 + 122 项上游断言通过。
 - [x] Plugin validator 与 5 个 Factory Skill quick validation 通过。
 - [x] 真实 FFmpeg/ffprobe/Chrome 运行，不以 mock 代替媒体链。

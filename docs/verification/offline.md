@@ -18,7 +18,7 @@ npm test
 /usr/local/bin/python3 /Users/wandl/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .
 ```
 
-结果：59 项 Node 测试通过，0 失败；插件结构校验通过。测试覆盖闭合契约、路径授权、素材与回执
+结果：60 项 Node 测试通过，0 失败；插件结构校验通过。测试覆盖闭合契约、路径授权、素材与回执
 哈希、报价和双阶段批准、失败记录、显式人工确认、内容寻址复用、拉片证据、同步审阅、FFmpeg
 编译、媒体硬门、安全策略和七 Skill 路由。
 
