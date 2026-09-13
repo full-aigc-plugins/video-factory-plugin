@@ -1,12 +1,24 @@
-import { lstatSync, realpathSync } from 'node:fs';
-import { isAbsolute, relative, resolve } from 'node:path';
+import { closeSync, fsyncSync, lstatSync, mkdirSync, openSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { sha256File } from './hash.mjs';
 
 export function resolveGrantedFile(root, candidate) {
   if (/^[a-z][a-z0-9+.-]*:/i.test(candidate)) throw new Error('input must be a local file');
   const base = realpathSync(root);
   const unresolved = isAbsolute(candidate) ? candidate : resolve(base, candidate);
-  const stat = lstatSync(unresolved);
+  const unresolvedRel = relative(base, unresolved);
+  if (unresolvedRel.startsWith('..') || isAbsolute(unresolvedRel)) throw new Error('input is outside input root');
+  let stat;
+  try {
+    stat = lstatSync(unresolved);
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      const missing = new Error(`missing asset: ${candidate}`);
+      missing.code = 'ASSET_MISSING';
+      throw missing;
+    }
+    throw error;
+  }
   if (stat.isSymbolicLink()) throw new Error('symlink inputs are not allowed');
   if (!stat.isFile()) throw new Error('input must be a local regular file');
   const actual = realpathSync(unresolved);
@@ -30,6 +42,33 @@ export function missingAssetRequirements(required, registered) {
   return required.filter((item) => !registered[item.id]).map((item) => ({
     id: item.id,
     kind: item.kind,
-    capability: item.kind === 'image' ? 'image.batch' : item.kind === 'animation' ? 'blender.animation' : 'user.asset',
+    capability: item.kind === 'image' ? 'image.batch' : item.kind === 'animation' || /blender/i.test(item.source ?? '') ? 'blender.animation' : 'user.asset',
   }));
+}
+
+export function findMissingAssetRequirements(assets, root) {
+  const registered = {};
+  for (const asset of assets) {
+    try {
+      resolveGrantedFile(root, asset.path);
+      registered[asset.id] = true;
+    } catch (error) {
+      if (error?.code !== 'ASSET_MISSING') throw error;
+    }
+  }
+  return missingAssetRequirements(assets, registered);
+}
+
+export function writeAssetRequirements(path, requirements) {
+  mkdirSync(dirname(path), { recursive: true });
+  const temp = join(dirname(path), `.asset-requirements.${process.pid}.tmp`);
+  const fd = openSync(temp, 'w', 0o600);
+  try {
+    writeFileSync(fd, `${JSON.stringify({ schemaVersion: '1.0.0', requirements }, null, 2)}\n`);
+    fsyncSync(fd);
+  } finally {
+    closeSync(fd);
+  }
+  renameSync(temp, path);
+  return path;
 }

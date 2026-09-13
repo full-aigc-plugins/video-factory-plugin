@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { sha256File } from '../src/hash.mjs';
-import { resolveGrantedFile, registerAssets } from '../src/paths.mjs';
+import { findMissingAssetRequirements, resolveGrantedFile, registerAssets, writeAssetRequirements } from '../src/paths.mjs';
 import { canonicalHash, validateVideoPlan } from '../src/plan.mjs';
 import { quotePlan, verifyApproval } from '../src/approval.mjs';
 import { failSegment, markSegment, newJob, pendingSegments, readLedger, transition, writeLedger } from '../src/job-ledger.mjs';
@@ -20,6 +20,21 @@ test('asset registration binds regular local files and rejects URL or symlink es
   assert.equal(result.A01.path, realpathSync(join(root, 'clip.bin')));
   assert.throws(() => resolveGrantedFile(root, 'https://example.com/a.mp4'), /local file/);
   assert.throws(() => resolveGrantedFile(root, 'escape.bin'), /symlink/);
+  assert.throws(() => resolveGrantedFile(root, 'missing.mp4'), /missing asset/);
+});
+
+test('missing assets produce an atomic public handoff without probing outside the grant', () => {
+  const root = mkdtempSync(join(tmpdir(), 'video-requirements-'));
+  const requirements = findMissingAssetRequirements([
+    { id: 'IMG01', path: 'story.png', kind: 'image' },
+    { id: 'ANIM01', path: 'scene.mp4', kind: 'video', source: 'codex-blender-plugin' },
+  ], root);
+  assert.deepEqual(requirements.map((item) => item.capability), ['image.batch', 'blender.animation']);
+  const destination = join(root, 'work', 'asset-requirements.json');
+  writeAssetRequirements(destination, requirements);
+  assert.equal(existsSync(destination), true);
+  assert.equal(JSON.parse(readFileSync(destination, 'utf8')).requirements.length, 2);
+  assert.throws(() => findMissingAssetRequirements([{ id: 'X', path: '../escape', kind: 'video' }], root), /outside input root/);
 });
 
 test('plan identity is stable and approval binds stage, round and both hashes', () => {

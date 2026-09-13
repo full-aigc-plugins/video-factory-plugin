@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -129,4 +129,25 @@ test('approved final orchestrator binds audio and subtitle assets and completes 
   assert.equal(result.receipt.hasAudio, true);
   assert.equal(result.scores.failedRequired.length, 0);
   assert.equal(result.scores.gates.find((gate) => gate.id === 'subtitleTiming').status, 'PASS');
+});
+
+test('approved run with missing media stops before rendering and writes asset requirements', { timeout: 30000 }, async () => {
+  const root = mkdtempSync(join(tmpdir(), 'video-missing-'));
+  const plan = {
+    schemaVersion: '1.0.0', id: 'missing-job', mode: 'local_composition', round: 1,
+    assets: [{ id: 'IMG01', path: 'missing.png', sha256: 'a'.repeat(64), kind: 'image', durationTicks: 30, source: 'codex-image-factory' }],
+    editDecision: { schemaVersion: '1.0.0', id: 'E01', revision: 1, timebase: { numerator: 1, denominator: 30 }, clips: [
+      { id: 'C01', assetId: 'IMG01', sourceInTicks: 0, sourceOutTicks: 30, timelineInTicks: 0, track: 0, transition: 'cut', gainDb: 0 },
+    ] },
+    output: { aspect: '16:9', width: 320, height: 180, fps: 30, requireAudio: false },
+  };
+  const quote = quotePlan(plan, 'rough', 1);
+  const approval = { schemaVersion: '1.0.0', stage: 'rough', planHash: quote.planHash, editHash: quote.editHash, round: 1, quoteRevision: 1, acceptedAt: '2026-09-14T00:00:00Z' };
+  const planPath = join(root, 'plan.json');
+  const approvalPath = join(root, 'approval.json');
+  const workRoot = join(root, 'work');
+  writeFileSync(planPath, JSON.stringify(plan));
+  writeFileSync(approvalPath, JSON.stringify(approval));
+  await assert.rejects(() => runApproved({ planPath, approvalPath, ledgerPath: join(root, 'job.json'), inputRoot: root, workRoot, outputRoot: join(root, 'output'), stage: 'rough' }), /requirements written/);
+  assert.equal(JSON.parse(readFileSync(join(workRoot, 'asset-requirements.json'), 'utf8')).requirements[0].capability, 'image.batch');
 });

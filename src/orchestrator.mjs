@@ -8,7 +8,7 @@ import { renderFinal } from './final-renderer.mjs';
 import { failSegment, markSegment, newJob, pendingSegments, readLedger, transition, writeLedger } from './job-ledger.mjs';
 import { evaluateMedia } from './media-evaluator.mjs';
 import { analyzeMedia } from './media-analysis.mjs';
-import { registerAssets } from './paths.mjs';
+import { findMissingAssetRequirements, registerAssets, writeAssetRequirements } from './paths.mjs';
 import { canonicalHash, validateVideoPlan } from './plan.mjs';
 import { probeCapabilities } from './probe.mjs';
 import { renderSegment } from './segment-renderer.mjs';
@@ -28,10 +28,15 @@ export async function runApproved({ planPath, approvalPath, ledgerPath, inputRoo
   if (!capabilities.available) throw new Error('ffmpeg and ffprobe are required');
   const quote = quotePlan(plan, stage, 1);
   verifyApproval(approval, quote);
+  mkdirSync(workRoot, { recursive: true });
+  const requirements = findMissingAssetRequirements(plan.assets, inputRoot);
+  if (requirements.length) {
+    const requirementsPath = writeAssetRequirements(join(workRoot, 'asset-requirements.json'), requirements);
+    throw new Error(`missing assets; requirements written to ${requirementsPath}`);
+  }
   const assets = await registerAssets(plan.assets, inputRoot);
   const durations = Object.fromEntries(plan.assets.map((asset) => [asset.id, asset.durationTicks ?? Number.MAX_SAFE_INTEGER]));
   validateEditDecision(plan.editDecision, durations);
-  mkdirSync(workRoot, { recursive: true });
   mkdirSync(outputRoot, { recursive: true });
   let job = existsSync(ledgerPath) ? readLedger(ledgerPath) : newJob({ id: plan.id, planHash: quote.planHash, stage, shotIds: plan.editDecision.clips.map((clip) => clip.id) });
   if (job.planHash !== quote.planHash || job.stage !== stage) throw new Error('ledger does not match approved plan');
