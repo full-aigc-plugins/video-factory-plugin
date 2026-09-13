@@ -33,6 +33,19 @@ test('real FFmpeg renders resumable image segments and a verified rough cut', { 
   assert.equal(scores.decision, 'pass');
 });
 
+test('real FFmpeg assembles two normalized segments with a dissolve', { timeout: 30000 }, async () => {
+  const root = mkdtempSync(join(tmpdir(), 'vedio-dissolve-'));
+  const firstPath = join(root, 'first.mp4');
+  const secondPath = join(root, 'second.mp4');
+  for (const [path, color] of [[firstPath, 'purple'], [secondPath, 'yellow']]) {
+    execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', `color=${color}:s=320x180:d=1`, '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-shortest', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', path]);
+  }
+  const destination = join(root, 'dissolve.mp4');
+  const receipt = await assembleVideo([firstPath, secondPath], outputProfile('rough', { width: 320, height: 180 }), destination, 30000, { durations: [1, 1], transitions: ['cut', 'dissolve'] });
+  assert.equal(receipt.decodeOk, true);
+  assert.ok(Math.abs(receipt.durationSeconds - 1.5) < 0.15);
+});
+
 test('approved orchestrator produces a review-ready rough cut and durable receipts', { timeout: 30000 }, async () => {
   const root = mkdtempSync(join(tmpdir(), 'vedio-approved-'));
   const image = join(root, 'green.png');

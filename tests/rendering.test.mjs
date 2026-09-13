@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { compileSegment, outputProfile, segmentKey } from '../src/ffmpeg-compiler.mjs';
+import { compileDissolveAssembly, compileSegment, outputProfile, segmentKey } from '../src/ffmpeg-compiler.mjs';
 import { evaluateMedia } from '../src/media-evaluator.mjs';
 import { compileMaster } from '../src/final-renderer.mjs';
 
@@ -32,6 +32,24 @@ test('image and clip segments compile to bounded argv without a shell or network
   assert.ok(clip.args.includes('-ss'));
   assert.ok(clip.args.includes('1'));
   assert.throws(() => compileSegment({ ...clip, kind: 'filter', filter: 'movie=http://x' }, profile, '/work/x.mp4'), /unsupported source kind/);
+});
+
+test('declared camera motion and fade transitions compile from a closed vocabulary', () => {
+  const pan = compileSegment({ id: 'C03', kind: 'image', path: '/input/a.png', durationSeconds: 2, motion: 'pan-left', transition: 'fade' }, profile, '/work/C03.mp4');
+  const filter = pan.args[pan.args.indexOf('-vf') + 1];
+  assert.match(filter, /zoompan/);
+  assert.match(filter, /fade=t=in/);
+  assert.match(filter, /fade=t=out/);
+  assert.throws(() => compileSegment({ id: 'C04', kind: 'image', path: '/input/a.png', durationSeconds: 2, motion: 'arbitrary-filter' }, profile, '/work/C04.mp4'), /unsupported motion/);
+});
+
+test('dissolve assembly compiles a bounded xfade and acrossfade graph', () => {
+  const spec = compileDissolveAssembly(['/work/A.mp4', '/work/B.mp4'], [2, 2], ['cut', 'dissolve'], profile, '/work/out.mp4');
+  assert.equal(spec.options.shell, false);
+  const graph = spec.args[spec.args.indexOf('-filter_complex') + 1];
+  assert.match(graph, /xfade=transition=fade:duration=0.5:offset=1.5/);
+  assert.match(graph, /acrossfade=d=0.5/);
+  assert.throws(() => compileDissolveAssembly(['/work/A.mp4'], [2], ['cut'], profile, '/work/out.mp4'), /at least two/);
 });
 
 test('segment identity changes with source hash or edit parameters', () => {

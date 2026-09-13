@@ -44,6 +44,18 @@ test('edit decision schema accepts the minimal literal and rejects an unknown fi
   assert.match(issues[0].message, /additional property/);
 });
 
+test('video plan schema closes asset handoff and output mastering fields', () => {
+  const plan = {
+    schemaVersion: '1.0.0', id: 'P01', mode: 'local_composition', round: 1,
+    editDecision: decision,
+    assets: [{ id: 'A01', path: 'frame.png', sha256: 'a'.repeat(64), kind: 'image', durationTicks: 60, source: 'codex-image-factory', authorizedAt: '2026-09-14T00:00:00Z' }],
+    output: { aspect: '16:9', width: 1920, height: 1080, fps: 30, requireAudio: false },
+  };
+  assert.deepEqual(validateSchemaInstance(schema('video_plan'), plan), []);
+  const issues = validateSchemaInstance(schema('video_plan'), { ...plan, output: { ...plan.output, arbitraryFilter: 'movie=http://example.com/x' } });
+  assert.match(issues[0].message, /additional property/);
+});
+
 test('edit decision behavior rejects duplicate ids, overlaps and invalid source ranges', () => {
   assert.deepEqual(validateEditDecision(decision, { A01: 60, A02: 120 }), decision);
   assert.throws(() => validateEditDecision({ ...decision, clips: [decision.clips[0], { ...decision.clips[1], id: 'C01' }] }, { A01: 60, A02: 120 }), /duplicate clip id/);

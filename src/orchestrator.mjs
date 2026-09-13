@@ -3,7 +3,7 @@ import { basename, join } from 'node:path';
 import { verifyApproval, quotePlan } from './approval.mjs';
 import { assembleVideo } from './assembler.mjs';
 import { validateEditDecision } from './edit-decision.mjs';
-import { outputProfile, segmentKey } from './ffmpeg-compiler.mjs';
+import { effectiveAssemblyDuration, outputProfile, segmentKey } from './ffmpeg-compiler.mjs';
 import { renderFinal } from './final-renderer.mjs';
 import { markSegment, newJob, pendingSegments, readLedger, transition, writeLedger } from './job-ledger.mjs';
 import { evaluateMedia } from './media-evaluator.mjs';
@@ -44,7 +44,7 @@ export async function runApproved({ planPath, approvalPath, ledgerPath, inputRoo
     const asset = assets[clip.assetId];
     const descriptor = { id: clip.id, assetHash: asset.sha256, sourceInTicks: clip.sourceInTicks, sourceOutTicks: clip.sourceOutTicks, profile };
     const destination = join(workRoot, 'segments', `${clip.id}-${segmentKey(descriptor)}.mp4`);
-    const outcome = await renderSegment({ source: { id: clip.id, kind: asset.kind, path: asset.path, sourceInSeconds: clip.sourceInTicks * secondsPerTick, durationSeconds: (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick, motion: clip.motion ?? 'static' }, profile, destination });
+    const outcome = await renderSegment({ source: { id: clip.id, kind: asset.kind, path: asset.path, sourceInSeconds: clip.sourceInTicks * secondsPerTick, durationSeconds: (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick, motion: clip.motion ?? 'static', transition: clip.transition }, profile, destination });
     job = markSegment(job, clip.id, outcome.receipt);
     writeLedger(ledgerPath, job);
   }
@@ -52,10 +52,12 @@ export async function runApproved({ planPath, approvalPath, ledgerPath, inputRoo
   writeLedger(ledgerPath, job);
   const segmentPaths = plan.editDecision.clips.map((clip) => job.segments.find((segment) => segment.id === clip.id).receipt.path);
   const artifactPath = join(outputRoot, `${basename(plan.id)}-${stage}-${canonicalHash(plan).slice(0, 12)}.mp4`);
-  const durationSeconds = plan.editDecision.clips.reduce((sum, clip) => sum + (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick, 0);
+  const clipDurations = plan.editDecision.clips.map((clip) => (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick);
+  const transitions = plan.editDecision.clips.map((clip) => clip.transition);
+  const durationSeconds = effectiveAssemblyDuration(clipDurations, transitions);
   const needsMastering = stage === 'final' && (plan.output.audioAssetId || plan.output.subtitleAssetId);
   const assemblyPath = needsMastering ? join(workRoot, `assembled-${canonicalHash(plan).slice(0, 12)}.mp4`) : artifactPath;
-  let receipt = await assembleVideo(segmentPaths, profile, assemblyPath);
+  let receipt = await assembleVideo(segmentPaths, profile, assemblyPath, 120000, { durations: clipDurations, transitions });
   if (needsMastering) {
     receipt = await renderFinal({
       inputVideo: assemblyPath,
