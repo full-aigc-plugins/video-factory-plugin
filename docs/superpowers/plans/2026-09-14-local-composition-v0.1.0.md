@@ -127,18 +127,22 @@ flowchart LR
 - [x] 中英文 README、CLI 手册、隐私、条款、许可证、变更记录和第三方通知。
 - [x] 真实验收：多段视频、六图片故事、Blender 回执、拉片、同步审阅、单镜修改、三画幅、恢复。
 - [x] Factory Skills TRACE 确定性评测已记录，未对低分做美化。
-- [ ] 远端分支同步、主分支集成和发布标签。
+- [x] 功能分支已同步远端，本地/tracking/remote SHA 一致。
+- [ ] 主分支集成和发布标签。
 - [ ] 从远端 Marketplace 新缓存安装并核对源码/缓存哈希。
 - [ ] 用户人工连续播放代表粗剪、同步审阅版和终版并确认。
 
 ## 完成门禁
 
-- [x] 60 项项目测试通过，0 失败。
+- [x] 61 项项目测试通过，0 失败。
 - [x] 27/27 ReelBench 文件双哈希一致，449 + 122 项上游断言通过。
 - [x] Plugin validator 与 5 个 Factory Skill quick validation 通过。
 - [x] 真实 FFmpeg/ffprobe/Chrome 运行，不以 mock 代替媒体链。
 - [x] 活跃代码无外部视频 API、API Key、shell:true、网络输入或自动重试。
-- [ ] 发布后三方 SHA（本地、tracking、remote）一致。
+- [x] 功能分支三方 SHA（本地、tracking、remote）一致。
+- [x] GitHub Actions Node 18/24 真实媒体 CI 通过。
+- [ ] 主分支发布后三方 SHA 一致。
+- [ ] 两条独立代码审查通道返回证据（当前因未授权子智能体而 unavailable）。
 - [ ] 新 Marketplace 缓存安装与新会话发现通过。
 - [ ] 人工播放结果由用户明确记录。
 
