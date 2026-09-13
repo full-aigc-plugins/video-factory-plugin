@@ -23,6 +23,19 @@ test('asset registration binds regular local files and rejects URL or symlink es
   assert.throws(() => resolveGrantedFile(root, 'missing.mp4'), /missing asset/);
 });
 
+test('cross-plugin asset registration verifies the public receipt hash', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'video-receipt-'));
+  const artifact = join(root, 'blender.mp4');
+  const receipt = join(root, 'blender.receipt.json');
+  writeFileSync(artifact, 'blender-render');
+  const hash = await sha256File(artifact);
+  writeFileSync(receipt, JSON.stringify({ schemaVersion: '1.0.0', source: 'codex-blender-plugin', path: 'blender.mp4', sha256: hash, kind: 'video' }));
+  const registered = await registerAssets([{ id: 'B01', path: 'blender.mp4', sha256: hash, kind: 'video', source: 'codex-blender-plugin', receiptPath: 'blender.receipt.json' }], root);
+  assert.equal(registered.B01.receipt.source, 'codex-blender-plugin');
+  writeFileSync(receipt, JSON.stringify({ schemaVersion: '1.0.0', source: 'codex-blender-plugin', path: 'blender.mp4', sha256: 'f'.repeat(64), kind: 'video' }));
+  await assert.rejects(() => registerAssets([{ id: 'B01', path: 'blender.mp4', sha256: hash, kind: 'video', source: 'codex-blender-plugin', receiptPath: 'blender.receipt.json' }], root), /receipt hash mismatch/);
+});
+
 test('missing assets produce an atomic public handoff without probing outside the grant', () => {
   const root = mkdtempSync(join(tmpdir(), 'video-requirements-'));
   const requirements = findMissingAssetRequirements([

@@ -220,3 +220,38 @@ test('real final profiles render both portrait and square deliverables', { timeo
     assert.equal(result.receipt.pixelFormat, 'yuv420p');
   }
 });
+
+test('automatic rough cut consumes multiple real clips including a Blender public receipt', { timeout: 30000 }, async () => {
+  const root = mkdtempSync(join(tmpdir(), 'video-multiclip-'));
+  const userClip = join(root, 'user.mp4');
+  const blenderClip = join(root, 'blender.mp4');
+  for (const [path, color] of [[userClip, 'red'], [blenderClip, 'blue']]) {
+    execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', `color=${color}:s=160x90:d=1`, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', path]);
+  }
+  const userHash = await sha256File(userClip);
+  const blenderHash = await sha256File(blenderClip);
+  writeFileSync(join(root, 'blender.receipt.json'), JSON.stringify({ schemaVersion: '1.0.0', source: 'codex-blender-plugin', path: 'blender.mp4', sha256: blenderHash, kind: 'video' }));
+  const plan = {
+    schemaVersion: '1.0.0', id: 'multiclip-job', mode: 'local_composition', round: 1,
+    assets: [
+      { id: 'V01', path: 'user.mp4', sha256: userHash, kind: 'video', durationTicks: 30, source: 'user' },
+      { id: 'V02', path: 'blender.mp4', sha256: blenderHash, kind: 'video', durationTicks: 30, source: 'codex-blender-plugin', receiptPath: 'blender.receipt.json' },
+    ],
+    editDecision: { schemaVersion: '1.0.0', id: 'E01', revision: 1, timebase: { numerator: 1, denominator: 30 }, clips: [
+      { id: 'C01', assetId: 'V01', sourceInTicks: 0, sourceOutTicks: 30, timelineInTicks: 0, track: 0, transition: 'cut', gainDb: 0 },
+      { id: 'C02', assetId: 'V02', sourceInTicks: 0, sourceOutTicks: 30, timelineInTicks: 30, track: 0, transition: 'dissolve', gainDb: 0 },
+    ] },
+    output: { aspect: '16:9', width: 320, height: 180, fps: 30, requireAudio: false },
+  };
+  const quote = quotePlan(plan, 'rough', 1);
+  const approval = { schemaVersion: '1.0.0', stage: 'rough', planHash: quote.planHash, editHash: quote.editHash, round: 1, quoteRevision: 1, acceptedAt: '2026-09-14T00:00:00Z' };
+  const planPath = join(root, 'plan.json');
+  const approvalPath = join(root, 'approval.json');
+  writeFileSync(planPath, JSON.stringify(plan));
+  writeFileSync(approvalPath, JSON.stringify(approval));
+  const result = await runApproved({ planPath, approvalPath, ledgerPath: join(root, 'job.json'), inputRoot: root, workRoot: join(root, 'work'), outputRoot: join(root, 'output'), stage: 'rough' });
+  assert.equal(result.job.state, 'ReviewReady');
+  assert.equal(result.job.segments.length, 2);
+  assert.ok(Math.abs(result.receipt.durationSeconds - 1.5) < 0.15);
+  assert.equal(result.scores.failedRequired.length, 0);
+});

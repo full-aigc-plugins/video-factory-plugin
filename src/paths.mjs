@@ -1,4 +1,4 @@
-import { closeSync, fsyncSync, lstatSync, mkdirSync, openSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
+import { closeSync, fsyncSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { sha256File } from './hash.mjs';
 
@@ -33,7 +33,19 @@ export async function registerAssets(assets, root) {
     const path = resolveGrantedFile(root, asset.path);
     const actual = await sha256File(path);
     if (actual !== asset.sha256) throw new Error(`asset hash mismatch: ${asset.id}`);
-    result[asset.id] = { ...asset, path };
+    let receipt;
+    if (asset.receiptPath) {
+      const receiptFile = resolveGrantedFile(root, asset.receiptPath);
+      receipt = JSON.parse(readFileSync(receiptFile, 'utf8'));
+      const allowed = new Set(['schemaVersion', 'source', 'path', 'sha256', 'kind', 'license', 'authorizedAt', 'artifactId']);
+      const unknown = Object.keys(receipt).find((key) => !allowed.has(key));
+      if (unknown) throw new Error(`unsupported receipt field: ${unknown}`);
+      if (receipt.sha256 !== actual) throw new Error(`receipt hash mismatch: ${asset.id}`);
+      if (receipt.kind !== asset.kind) throw new Error(`receipt kind mismatch: ${asset.id}`);
+      if (asset.source && receipt.source !== asset.source) throw new Error(`receipt source mismatch: ${asset.id}`);
+      if (resolveGrantedFile(root, receipt.path) !== path) throw new Error(`receipt path mismatch: ${asset.id}`);
+    }
+    result[asset.id] = { ...asset, path, ...(receipt ? { receipt } : {}) };
   }
   return result;
 }
