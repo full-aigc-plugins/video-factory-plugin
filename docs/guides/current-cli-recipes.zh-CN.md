@@ -15,8 +15,17 @@ bin/video-factory probe
 bin/video-factory analyze input.mp4 --out reelbench-analysis
 ```
 
-该命令执行原样 ReelBench 的 seed 分析入口。完整语义标注、验证与报告应按 `video-shots`
-Skill 的原始流程继续，Factory 保留原始 stdout、stderr、退出码和证据路径。
+该命令执行原样 ReelBench 的 seed、关键帧和双联系表入口，并生成逐文件 SHA-256 证据清单。
+Codex 按 `video-shots` 原始 Skill 完成语义标注后，再执行：
+
+```bash
+bin/video-factory analyze-finalize reelbench-analysis/shots.json \
+  --track reelbench-analysis/track.json \
+  --frames reelbench-analysis/frames \
+  --video source.mp4
+```
+
+该命令调用原始 validate 和 Markdown/HTML render；跳过的上游门保留为 `SKIPPED`。
 
 ## 3. 计划与批准
 
@@ -68,11 +77,15 @@ bin/video-factory run video-plan.json \
 bin/video-factory status rough-job.json
 bin/video-factory recover rough-job.json
 bin/video-factory evaluate output/final.mp4 video-plan.json
+bin/video-factory accept final-job.json --decision approved --note "已播放并确认"
 ```
 
 恢复只返回尚未完成的镜头；失败步骤不会自动重试。每个分段以素材哈希与编辑参数寻址，
 未变化分段可复用。最终媒体会执行 ffprobe、完整解码、两次哈希、黑帧、冻结帧、静音和字幕
 时间边界检查。`SKIPPED` 与 `NOT_RUN` 不得写成 `PASS`。
+
+终版技术门通过后仍是 `ReviewReady`。只有显式 `accept --decision approved` 才进入 `Completed`；
+`--decision rejected` 进入 `ReworkReady`，等待新 revision。
 
 ## 6. 缺素材交接
 

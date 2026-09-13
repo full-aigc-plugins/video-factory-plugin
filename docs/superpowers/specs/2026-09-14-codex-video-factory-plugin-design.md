@@ -180,13 +180,15 @@ Skill 只描述何时使用、输入输出、批准点和失败边界。确定�
 
 ```text
 bin/video-factory probe
+bin/video-factory analyze <video-file> --out <evidence-dir>
+bin/video-factory analyze-finalize <shots.json> --track <track.json> --frames <frames-dir>
 bin/video-factory validate-plan <video-plan.json>
-bin/video-factory quote <video-plan.json>
-bin/video-factory run <video-plan.json> --approval <approval.json>
+bin/video-factory quote <video-plan.json> --stage rough|final
+bin/video-factory run <video-plan.json> --stage rough|final --approval <approval.json>
+bin/video-factory review-sync <rough-cut> <shots.json>
 bin/video-factory status <job-ledger.json>
-bin/video-factory verify <artifact-receipt.json>
-bin/video-factory evaluate <video-plan.json> <job-ledger.json>
-bin/video-factory inspect <video-file> --purpose <reference|quality|rhythm>
+bin/video-factory evaluate <artifact> <video-plan.json> [--stage rough|final]
+bin/video-factory accept <job-ledger.json> --decision approved|rejected
 bin/video-factory recover <job-ledger.json>
 ```
 
@@ -201,7 +203,7 @@ bin/video-factory recover <job-ledger.json>
 - `video_approval.schema.json`：plan hash、round、最大远程调用数和本地资源确认；
 - `media_artifact_receipt.schema.json`：路径、SHA-256、字节、容器、流、时长、画幅和编码；
 - `media_scores.schema.json`：确定性门、建议评分、人工标签和最终决定；
-- `shot_analysis.schema.json`：切点、镜头、运动证据、语义标注和跳过门状态。
+- `reelbench_evidence.schema.json`：切点、运动、关键帧、联系表、报告、哈希清单和跳过门状态。
 
 所有 Schema 使用 JSON Schema Draft 2020-12、`additionalProperties: false`，版本字段必填。
 文件路径不是身份；Artifact ID 与内容哈希共同确定不可变产物。
@@ -301,7 +303,7 @@ stateDiagram-v2
 - 杀死渲染进程后恢复，证明已完成分段不重做；
 - 篡改输入、分段、成片和回执，证明哈希门能发现；
 - 缺 FFmpeg、缺音频、磁盘不足、非法路径和损坏媒体；
-- Chrome 可用/不可用时 inspect 与主生产链正确降级。
+- Chrome 可用/不可用时同步审阅与主生产链正确降级。
 
 ### 真实验收
 
@@ -337,5 +339,6 @@ stateDiagram-v2
 
 ## 18. 当前事实状态
 
-本仓库当前只有本设计规格。CLI、Schema、Skills、渲染器、测试、插件清单和运行证据均尚未
-实现。本文不能作为产品已就绪、视频已生成或 Marketplace 已发布的证明。
+0.1.0 的 CLI、闭合 Schema、七个 Skills、原样 ReelBench 快照、渲染器、台账、批准、恢复、
+媒体门和测试已经实现。源码实现不等于 Marketplace 发布；离线测试、真实运行、远端推送、
+新缓存安装和人工播放仍必须在发布证据中分别记录。

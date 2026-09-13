@@ -26,12 +26,16 @@ There are no npm runtime dependencies and no API keys.
 
 ```bash
 bin/video-factory probe
+bin/video-factory analyze source.mp4 --out reelbench-analysis
+# Codex annotates shots.json using the original video-shots Skill
+bin/video-factory analyze-finalize reelbench-analysis/shots.json --track reelbench-analysis/track.json --frames reelbench-analysis/frames
 bin/video-factory validate-plan video-plan.json
 bin/video-factory quote video-plan.json --stage rough
 bin/video-factory run video-plan.json --stage rough --approval rough-approval.json
 bin/video-factory review-sync output/rough.mp4 reelbench-analysis/shots.json
 bin/video-factory quote video-plan.json --stage final
 bin/video-factory run video-plan.json --stage final --approval final-approval.json
+bin/video-factory accept final-job.json --decision approved --note "played and accepted"
 ```
 
 Every approval binds the stage, plan hash, edit hash, round, and quote revision. Any asset, edit, or output

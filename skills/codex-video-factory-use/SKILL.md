@@ -5,7 +5,7 @@ description: Use when a request involves automatic video editing, rough cuts, fi
 
 # Codex Video Factory
 
-## 30 秒开始
+## Quick start · 30 秒开始
 
 用户只需说目标，例如：
 
@@ -17,7 +17,7 @@ description: Use when a request involves automatic video editing, rough cuts, fi
 自动剪辑计划用 `codex-video-factory-plan`；已批准渲染用 `codex-video-factory-run`；验收用
 `codex-video-factory-judge`；中断恢复用 `codex-video-factory-recover`。
 
-## 工作流
+## Workflow · 工作流
 
 1. 明确成片目的、受众、时长、画幅和已有素材；信息不足时先给带假设的草案并列出缺项。
 2. 已有视频需要证据时先路由 `video-shots`，不要自行复制其切点算法。
@@ -26,7 +26,7 @@ description: Use when a request involves automatic video editing, rough cuts, fi
 5. 把用户意见转成新 revision，保留旧决定和旧成片。
 6. 终版重新报价、重新批准，渲染后执行确定性质量门和人工确认。
 
-## 能力边界
+## Capability boundaries · 能力边界
 
 ### 能做
 
@@ -48,13 +48,18 @@ description: Use when a request involves automatic video editing, rough cuts, fi
 
 原生生成请求在 0.1.0 明确 blocked；不能把本地合成或第三方能力冒充 Codex 原生视频生成。
 
-## 安全与准确性
+## Rules and validation · 安全与准确性
 
 只接受授权根目录内的普通本地文件。拒绝 URL、路径穿越、符号链接逃逸、特殊文件、哈希变化、
 任意 FFmpeg 表达式和凭据字段。可测量事实必须来自程序证据；不确定的信息标为 `NOT_RUN`，
 不得编造成功。模型建议不能覆盖确定性失败，人工驳回不能被模型分数覆盖。
 
-## 深入阅读
+## Gotchas · 常见陷阱
+
+旧批准不能用于新 revision；同步审阅不是客户终版；无音轨原片不能直接交给 `video-sync`；缺失
+Chrome 只降级同步审阅；`SKIPPED` 不能写成 `PASS`。修复模板和完整 FAQ 见下方参考文档。
+
+## References · 深入阅读
 
 - [路由决策](references/routing.md)
 - [公开契约与安全](references/contracts-and-safety.md)

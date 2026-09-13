@@ -27,12 +27,16 @@ Codex Video Factory 是本地优先的 Codex 视频工厂插件，负责已有�
 
 ```bash
 bin/video-factory probe
+bin/video-factory analyze source.mp4 --out reelbench-analysis
+# Codex 按原样 video-shots Skill 标注 shots.json 后：
+bin/video-factory analyze-finalize reelbench-analysis/shots.json --track reelbench-analysis/track.json --frames reelbench-analysis/frames
 bin/video-factory validate-plan video-plan.json
 bin/video-factory quote video-plan.json --stage rough
 bin/video-factory run video-plan.json --stage rough --approval rough-approval.json
 bin/video-factory review-sync output/rough.mp4 reelbench-analysis/shots.json
 bin/video-factory quote video-plan.json --stage final
 bin/video-factory run video-plan.json --stage final --approval final-approval.json
+bin/video-factory accept final-job.json --decision approved --note "已播放并确认"
 ```
 
 粗剪和终版各自批准。批准绑定 stage、plan hash、edit hash、round 和报价 revision；素材、剪辑
