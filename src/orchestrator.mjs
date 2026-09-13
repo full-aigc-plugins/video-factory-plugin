@@ -7,6 +7,7 @@ import { outputProfile, segmentKey } from './ffmpeg-compiler.mjs';
 import { renderFinal } from './final-renderer.mjs';
 import { markSegment, newJob, pendingSegments, readLedger, transition, writeLedger } from './job-ledger.mjs';
 import { evaluateMedia } from './media-evaluator.mjs';
+import { analyzeMedia } from './media-analysis.mjs';
 import { registerAssets } from './paths.mjs';
 import { canonicalHash, validateVideoPlan } from './plan.mjs';
 import { probeCapabilities } from './probe.mjs';
@@ -66,7 +67,12 @@ export async function runApproved({ planPath, approvalPath, ledgerPath, inputRoo
     });
   }
   job = transition(job, 'Verifying', 'assembled artifact');
-  const scores = evaluateMedia({ output: { ...profile, durationSeconds, requireAudio: Boolean(plan.output.requireAudio) } }, receipt, {}, 'unlabeled');
+  const evidence = analyzeMedia(receipt.path, {
+    durationSeconds,
+    hasAudio: receipt.hasAudio,
+    subtitlePath: plan.output.subtitleAssetId ? assets[plan.output.subtitleAssetId].path : null,
+  });
+  const scores = evaluateMedia({ output: { ...profile, durationSeconds, requireAudio: Boolean(plan.output.requireAudio) } }, receipt, evidence, 'unlabeled');
   job = transition(job, scores.failedRequired.length ? 'Failed' : 'ReviewReady', 'media evaluation complete');
   if (!scores.failedRequired.length && stage === 'final') job = transition(job, 'Completed', 'approved final artifact complete');
   job = { ...job, revision: job.revision + 1, artifact: receipt, scores };

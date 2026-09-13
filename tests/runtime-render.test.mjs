@@ -105,4 +105,5 @@ test('approved final orchestrator binds audio and subtitle assets and completes 
   assert.equal(result.job.state, 'Completed');
   assert.equal(result.receipt.hasAudio, true);
   assert.equal(result.scores.failedRequired.length, 0);
+  assert.equal(result.scores.gates.find((gate) => gate.id === 'subtitleTiming').status, 'PASS');
 });
