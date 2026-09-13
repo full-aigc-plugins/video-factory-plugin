@@ -1,4 +1,13 @@
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { validateSchemaInstance } from './schema-lite.mjs';
+
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const readSchema = (name) => JSON.parse(readFileSync(join(ROOT, 'schemas', `${name}.schema.json`), 'utf8'));
+const VIDEO_PLAN_SCHEMA = readSchema('video_plan');
+const EDIT_DECISION_SCHEMA = readSchema('edit_decision');
 
 const ordered = (value) => {
   if (Array.isArray(value)) return value.map(ordered);
@@ -12,6 +21,11 @@ export function canonicalHash(value) {
 
 export function validateVideoPlan(plan) {
   if (plan.mode !== 'local_composition') throw new Error('only local_composition is available');
+  const issues = [
+    ...validateSchemaInstance(VIDEO_PLAN_SCHEMA, plan),
+    ...validateSchemaInstance(EDIT_DECISION_SCHEMA, plan.editDecision, '$.editDecision'),
+  ];
+  if (issues.length) throw new Error(`${issues[0].path}: ${issues[0].message}`);
   if (!Number.isInteger(plan.round) || plan.round < 1) throw new Error('invalid round');
   if (!plan.editDecision || !Array.isArray(plan.assets) || !plan.assets.length) throw new Error('plan requires editDecision and assets');
   const { width, height, fps } = plan.output ?? {};

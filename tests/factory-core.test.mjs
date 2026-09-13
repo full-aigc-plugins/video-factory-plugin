@@ -23,11 +23,17 @@ test('asset registration binds regular local files and rejects URL or symlink es
 });
 
 test('plan identity is stable and approval binds stage, round and both hashes', () => {
-  const plan = { id: 'P1', round: 1, mode: 'local_composition', editDecision: { id: 'E1' }, assets: [{ id: 'A1' }], output: { width: 1280, height: 720, fps: 30 } };
+  const plan = {
+    schemaVersion: '1.0.0', id: 'P1', round: 1, mode: 'local_composition',
+    editDecision: { schemaVersion: '1.0.0', id: 'E1', revision: 1, timebase: { numerator: 1, denominator: 30 }, clips: [{ id: 'C01', assetId: 'A1', sourceInTicks: 0, sourceOutTicks: 30, timelineInTicks: 0, track: 0, transition: 'cut', gainDb: 0 }] },
+    assets: [{ id: 'A1', path: 'frame.png', sha256: 'a'.repeat(64), kind: 'image', durationTicks: 30 }],
+    output: { aspect: '16:9', width: 1280, height: 720, fps: 30, requireAudio: false },
+  };
   assert.equal(canonicalHash(plan), canonicalHash(structuredClone(plan)));
   assert.notEqual(canonicalHash(plan), canonicalHash({ ...plan, round: 2 }));
   assert.equal(validateVideoPlan(plan), plan);
-  assert.throws(() => validateVideoPlan({ ...plan, assets: [{ id: 'A1', kind: 'image' }], output: { ...plan.output, audioAssetId: 'A1' } }), /audio asset/);
+  assert.throws(() => validateVideoPlan({ ...plan, unexpected: true }), /additional property/);
+  assert.throws(() => validateVideoPlan({ ...plan, output: { ...plan.output, audioAssetId: 'A1' } }), /audio asset/);
   const quote = quotePlan(plan, 'rough', 1);
   const approval = { schemaVersion: '1.0.0', stage: 'rough', planHash: quote.planHash, editHash: quote.editHash, round: 1, quoteRevision: 1, acceptedAt: '2026-09-14T00:00:00Z' };
   assert.doesNotThrow(() => verifyApproval(approval, quote));

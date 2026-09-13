@@ -15,7 +15,12 @@ const capture = () => {
 test('CLI quote emits a zero-remote-call rough estimate', async () => {
   const root = mkdtempSync(join(tmpdir(), 'video-cli-'));
   const planPath = join(root, 'plan.json');
-  writeFileSync(planPath, JSON.stringify({ id: 'P1', round: 1, mode: 'local_composition', editDecision: { id: 'E1', clips: [] }, assets: [{ id: 'A1' }], output: { width: 1280, height: 720, fps: 30 } }));
+  writeFileSync(planPath, JSON.stringify({
+    schemaVersion: '1.0.0', id: 'P1', round: 1, mode: 'local_composition',
+    editDecision: { schemaVersion: '1.0.0', id: 'E1', revision: 1, timebase: { numerator: 1, denominator: 30 }, clips: [{ id: 'C01', assetId: 'A1', sourceInTicks: 0, sourceOutTicks: 30, timelineInTicks: 0, track: 0, transition: 'cut', gainDb: 0 }] },
+    assets: [{ id: 'A1', path: 'frame.png', sha256: 'a'.repeat(64), kind: 'image', durationTicks: 30 }],
+    output: { aspect: '16:9', width: 1280, height: 720, fps: 30, requireAudio: false },
+  }));
   const out = capture();
   assert.equal(await main(['quote', planPath, '--stage', 'rough'], out.io), 0);
   const quote = JSON.parse(out.read().stdout);
@@ -26,7 +31,7 @@ test('CLI quote emits a zero-remote-call rough estimate', async () => {
 test('CLI rejects unavailable native generation before execution', async () => {
   const root = mkdtempSync(join(tmpdir(), 'video-cli-'));
   const path = join(root, 'plan.json');
-  writeFileSync(path, JSON.stringify({ id: 'P1', round: 1, mode: 'codex_native_generation', editDecision: {}, assets: [{}], output: { width: 1280, height: 720, fps: 30 } }));
+  writeFileSync(path, JSON.stringify({ schemaVersion: '1.0.0', id: 'P1', round: 1, mode: 'codex_native_generation', editDecision: {}, assets: [{}], output: { width: 1280, height: 720, fps: 30 } }));
   const out = capture();
   assert.equal(await main(['validate-plan', path], out.io), 3);
   assert.match(out.read().stderr, /local_composition/);
