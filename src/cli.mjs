@@ -1,4 +1,3 @@
-import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { quotePlan } from './approval.mjs';
@@ -8,7 +7,8 @@ import { recoverySummary, runApproved } from './orchestrator.mjs';
 import { canonicalHash, validateVideoPlan } from './plan.mjs';
 import { probeCapabilities } from './probe.mjs';
 import { readLedger } from './job-ledger.mjs';
-import { assertReviewInput, reviewSyncCommand, runAnalyzeEvidence } from './integrations/reelbench-adapter.mjs';
+import { effectiveAssemblyDuration, outputProfile } from './ffmpeg-compiler.mjs';
+import { assertReviewInput, runAnalyzeEvidence, runReviewSync } from './integrations/reelbench-adapter.mjs';
 
 const HELP = `video-factory — automatic editing and verified video composition
 
@@ -54,10 +54,9 @@ export async function main(argv, io = { stdout: process.stdout, stderr: process.
       assertReviewInput(await collectMedia(argv[1], { provenanceOk: true }));
       const output = resolve(String(flag(argv, '-o', 'review-sync.mp4')));
       const panels = resolve(String(flag(argv, '--panels', 'review-panels')));
-      const spec = reviewSyncCommand(argv[1], argv[2], output, panels);
-      const result = spawnSync(spec.bin, spec.args, spec.options);
-      if (result.status !== 0) throw new Error(`review sync failed: ${result.stderr ?? ''}`);
-      io.stdout.write(`${JSON.stringify({ path: output }, null, 2)}\n`); return 0;
+      const evidenceDir = resolve(String(flag(argv, '--evidence', `${output}.evidence`)));
+      const result = await runReviewSync({ video: argv[1], shotsPath: argv[2], output, panels, evidenceDir });
+      io.stdout.write(`${JSON.stringify(result, null, 2)}\n`); return 0;
     }
     if (command === 'run') {
       const planPath = resolve(argv[1]);
@@ -72,7 +71,12 @@ export async function main(argv, io = { stdout: process.stdout, stderr: process.
     if (command === 'evaluate') {
       const plan = validateVideoPlan(readJson(argv[2]));
       const receipt = await collectMedia(argv[1], { provenanceOk: true, timelineOk: true });
-      io.stdout.write(`${JSON.stringify(evaluateMedia(plan, receipt), null, 2)}\n`); return 0;
+      const secondsPerTick = plan.editDecision.timebase.numerator / plan.editDecision.timebase.denominator;
+      const durations = plan.editDecision.clips.map((clip) => (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick);
+      const transitions = plan.editDecision.clips.map((clip) => clip.transition);
+      const stage = String(flag(argv, '--stage', 'final'));
+      const expected = { ...outputProfile(stage, plan.output), durationSeconds: effectiveAssemblyDuration(durations, transitions), requireAudio: plan.output.requireAudio };
+      io.stdout.write(`${JSON.stringify(evaluateMedia({ output: expected }, receipt), null, 2)}\n`); return 0;
     }
     io.stderr.write(`Unknown command: ${command}\n`); return 2;
   } catch (error) {

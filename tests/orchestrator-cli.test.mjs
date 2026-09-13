@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -44,4 +45,23 @@ test('recovery summary returns only pending segment ids and never retries failur
   assert.deepEqual(summary.pending, ['S02']);
   assert.deepEqual(summary.failed, ['S03']);
   assert.equal(summary.nextAction, 'resume_pending');
+});
+
+test('CLI evaluation derives expected duration from the edit rather than an undeclared output field', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'video-evaluate-'));
+  const planPath = join(root, 'plan.json');
+  const plan = {
+    schemaVersion: '1.0.0', id: 'P1', round: 1, mode: 'local_composition',
+    editDecision: { schemaVersion: '1.0.0', id: 'E1', revision: 1, timebase: { numerator: 1, denominator: 30 }, clips: [{ id: 'C01', assetId: 'A1', sourceInTicks: 0, sourceOutTicks: 30, timelineInTicks: 0, track: 0, transition: 'cut', gainDb: 0 }] },
+    assets: [{ id: 'A1', path: 'frame.png', sha256: 'a'.repeat(64), kind: 'image', durationTicks: 30 }],
+    output: { aspect: '16:9', width: 320, height: 180, fps: 30, requireAudio: false },
+  };
+  writeFileSync(planPath, JSON.stringify(plan));
+  const artifact = join(root, 'artifact.mp4');
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=green:s=320x180:d=1:r=30', '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-shortest', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', artifact]);
+  const out = capture();
+  assert.equal(await main(['evaluate', artifact, planPath], out.io), 0);
+  const scores = JSON.parse(out.read().stdout);
+  assert.deepEqual(scores.failedRequired, []);
+  assert.equal(scores.gates.find((gate) => gate.id === 'duration').status, 'PASS');
 });

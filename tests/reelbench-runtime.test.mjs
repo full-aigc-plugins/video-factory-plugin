@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { collectMedia } from '../src/media-collector.mjs';
-import { reviewSyncCommand, runAnalyzeEvidence } from '../src/integrations/reelbench-adapter.mjs';
+import { runAnalyzeEvidence, runReviewSync } from '../src/integrations/reelbench-adapter.mjs';
 
 test('original ReelBench scripts analyze real media and produce a synchronized review video', { timeout: 60000 }, async () => {
   const root = mkdtempSync(join(tmpdir(), 'reelbench-real-'));
@@ -28,9 +27,9 @@ test('original ReelBench scripts analyze real media and produce a synchronized r
   const shotsPath = join(root, 'shots.json');
   writeFileSync(shotsPath, JSON.stringify(shots));
   const output = join(root, 'review.mp4');
-  const spec = reviewSyncCommand(video, shotsPath, output, join(root, 'panels'));
-  const result = spawnSync(spec.bin, spec.args, spec.options);
-  assert.equal(result.status, 0, result.stderr);
+  const result = await runReviewSync({ video, shotsPath, output, panels: join(root, 'panels'), evidenceDir: join(root, 'review-evidence') });
   assert.ok(existsSync(output));
-  assert.equal((await collectMedia(output)).decodeOk, true);
+  assert.equal(result.receipt.decodeOk, true);
+  assert.equal(result.receipt.hashVerified, true);
+  assert.ok(existsSync(result.stderrPath));
 });

@@ -1,7 +1,8 @@
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { collectMedia } from '../media-collector.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SHOTS_SCRIPT = join(ROOT, 'skills/video-shots/scripts/video-shots.mjs');
@@ -64,4 +65,25 @@ export function reviewSyncCommand(video, shotsPath, output, panels, node = proce
 
 export function assertReviewInput(receipt) {
   if (receipt?.hasAudio !== true) throw new Error('video-sync requires a normalized audio track to bound output duration');
+}
+
+export async function runReviewSync({ video, shotsPath, output, panels, evidenceDir, runner = defaultRunner, node = process.execPath }) {
+  mkdirSync(dirname(output), { recursive: true });
+  mkdirSync(panels, { recursive: true });
+  mkdirSync(evidenceDir, { recursive: true });
+  const temp = `${output}.tmp-${process.pid}.mp4`;
+  const spec = reviewSyncCommand(video, shotsPath, temp, panels, node);
+  const result = runner(spec.bin, spec.args, spec.options);
+  const stdoutPath = join(evidenceDir, 'video-sync.stdout.txt');
+  const stderrPath = join(evidenceDir, 'video-sync.stderr.txt');
+  const executionPath = join(evidenceDir, 'video-sync.execution.json');
+  writeFileSync(stdoutPath, result.stdout ?? '');
+  writeFileSync(stderrPath, result.stderr ?? '');
+  writeFileSync(executionPath, `${JSON.stringify({ exitCode: result.status, signal: result.signal ?? null }, null, 2)}\n`);
+  if (result.error) throw new Error(`review sync unavailable: ${result.error.message}`);
+  if (result.status !== 0) throw new Error(`review sync failed with exit ${result.status}`);
+  await collectMedia(temp, { provenanceOk: true, timelineOk: true });
+  renameSync(temp, output);
+  const receipt = await collectMedia(output, { provenanceOk: true, timelineOk: true });
+  return { schemaVersion: '1.0.0', path: output, receipt, stdoutPath, stderrPath, executionPath };
 }
