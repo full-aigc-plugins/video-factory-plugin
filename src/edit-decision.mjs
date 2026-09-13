@@ -25,3 +25,17 @@ export function diffEditDecision(previous, next) {
   const removed = [...old.keys()].filter((id) => !(next.clips ?? []).some((clip) => clip.id === id));
   return { changed, removed };
 }
+
+export function reviseEditDecision(previous, changes) {
+  const next = structuredClone(previous);
+  for (const change of changes) {
+    const index = next.clips.findIndex((clip) => clip.id === change.id);
+    if (index < 0) throw new Error(`unknown clip id: ${change.id}`);
+    if (change.op === 'remove') next.clips.splice(index, 1);
+    else if (change.op === 'update') next.clips[index] = { ...next.clips[index], ...change.patch, id: change.id };
+    else if (change.op === 'move') next.clips[index] = { ...next.clips[index], timelineInTicks: change.timelineInTicks };
+    else throw new Error(`unsupported edit operation: ${change.op}`);
+  }
+  next.revision = previous.revision + 1;
+  return { decision: next, diff: diffEditDecision(previous, next) };
+}

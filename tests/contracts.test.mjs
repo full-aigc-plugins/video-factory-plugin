@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { assertSupportedSchema, validateSchemaInstance } from '../src/schema-lite.mjs';
-import { validateEditDecision } from '../src/edit-decision.mjs';
+import { reviseEditDecision, validateEditDecision } from '../src/edit-decision.mjs';
 
 const schema = (name) => JSON.parse(readFileSync(`schemas/${name}.schema.json`, 'utf8'));
 
@@ -24,6 +24,18 @@ test('public schemas are closed Draft 2020-12 documents using enforced keywords'
     assert.equal(document.additionalProperties, false);
     assert.doesNotThrow(() => assertSupportedSchema(document));
   }
+});
+
+test('edit revision changes only selected clips and preserves the previous decision', () => {
+  const original = structuredClone(decision);
+  const result = reviseEditDecision(decision, [
+    { op: 'update', id: 'C02', patch: { gainDb: -6 } },
+    { op: 'move', id: 'C02', timelineInTicks: 90 },
+  ]);
+  assert.equal(result.decision.revision, 2);
+  assert.equal(result.decision.clips[1].gainDb, -6);
+  assert.deepEqual(result.diff.changed, ['C02']);
+  assert.deepEqual(decision, original);
 });
 
 test('edit decision schema accepts the minimal literal and rejects an unknown field', () => {
