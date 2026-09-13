@@ -1,0 +1,29 @@
+{
+  "name": "codex-vedio-factory",
+  "version": "0.1.0",
+  "description": "Codex-driven automatic editing, video composition, synchronized review, recovery, and verified media receipts.",
+  "author": {"name": "Full Stack Skills / PartMe.AI", "url": "https://github.com/partme-ai"},
+  "homepage": "https://github.com/partme-ai/codex-vedio-factory-plugin",
+  "repository": "https://github.com/partme-ai/codex-vedio-factory-plugin",
+  "license": "Apache-2.0",
+  "keywords": ["video", "editing", "ffmpeg", "reelbench", "codex"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Codex Vedio Factory",
+    "shortDescription": "Analyze, edit, compose, and verify videos with Codex",
+    "longDescription": "Use original ReelBench skills for shot analysis and synchronized review, then create approved rough and final edits with deterministic FFmpeg execution, recovery, and verified media receipts.",
+    "developerName": "Full Stack Skills / PartMe.AI",
+    "category": "Creativity",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://github.com/partme-ai/codex-vedio-factory-plugin",
+    "privacyPolicyURL": "https://github.com/partme-ai/codex-vedio-factory-plugin/blob/main/PRIVACY.md",
+    "termsOfServiceURL": "https://github.com/partme-ai/codex-vedio-factory-plugin/blob/main/TERMS.md",
+    "defaultPrompt": [
+      "Analyze this video into verified shots",
+      "Create an approved rough cut from these local assets",
+      "Evaluate this final video and verify its media receipt"
+    ],
+    "brandColor": "#285444",
+    "screenshots": []
+  }
+}

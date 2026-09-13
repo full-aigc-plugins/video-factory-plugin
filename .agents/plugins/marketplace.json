@@ -1,0 +1,16 @@
+{
+  "name": "partme-ai-vedio-factory",
+  "interface": {"displayName": "PartMe.AI Vedio Factory"},
+  "plugins": [
+    {
+      "name": "codex-vedio-factory",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/partme-ai/codex-vedio-factory-plugin.git",
+        "ref": "main"
+      },
+      "policy": {"installation": "AVAILABLE", "authentication": "ON_USE"},
+      "category": "Creativity"
+    }
+  ]
+}
