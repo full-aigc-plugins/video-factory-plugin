@@ -207,3 +207,16 @@ test('a new edit revision reuses unchanged shots and rerenders only the changed 
   assert.equal(result.job.segments[1].reused, false);
   assert.equal(result.job.segments[1].attempts, 1);
 });
+
+test('real final profiles render both portrait and square deliverables', { timeout: 30000 }, async () => {
+  const root = mkdtempSync(join(tmpdir(), 'video-aspects-'));
+  const image = join(root, 'frame.png');
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=green:s=64x64', '-frames:v', '1', image]);
+  for (const [aspect, width, height] of [['9:16', 180, 320], ['1:1', 180, 180]]) {
+    const result = await renderSegment({ source: { id: aspect, kind: 'image', path: image, durationSeconds: 0.25, motion: 'zoom-in' }, profile: outputProfile('final', { aspect, width, height }), destination: join(root, `${aspect.replace(':', '-')}.mp4`) });
+    assert.equal(result.receipt.width, width);
+    assert.equal(result.receipt.height, height);
+    assert.equal(result.receipt.videoCodec, 'h264');
+    assert.equal(result.receipt.pixelFormat, 'yuv420p');
+  }
+});
