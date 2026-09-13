@@ -1,7 +1,10 @@
 import { canonicalHash } from './plan.mjs';
+import { editDurationSeconds } from './edit-decision.mjs';
 
 export function quotePlan(plan, stage, revision) {
   if (!['rough', 'final'].includes(stage)) throw new Error('stage must be rough or final');
+  const totalSeconds = editDurationSeconds(plan.editDecision);
+  const outputPixels = plan.output.width * plan.output.height;
   return {
     schemaVersion: '1.0.0',
     stage,
@@ -10,6 +13,9 @@ export function quotePlan(plan, stage, revision) {
     editHash: canonicalHash(plan.editDecision),
     round: plan.round,
     clips: plan.editDecision.clips?.length ?? 0,
+    totalSeconds,
+    outputPixels,
+    estimatedTemporaryBytes: Math.ceil(totalSeconds * outputPixels * plan.output.fps * 0.08),
     remoteInvocations: 0,
     requiresApproval: true,
   };

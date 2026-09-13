@@ -27,6 +27,9 @@ test('CLI quote emits a zero-remote-call rough estimate', async () => {
   const quote = JSON.parse(out.read().stdout);
   assert.equal(quote.remoteInvocations, 0);
   assert.equal(quote.stage, 'rough');
+  assert.equal(quote.totalSeconds, 1);
+  assert.equal(quote.outputPixels, 1280 * 720);
+  assert.ok(quote.estimatedTemporaryBytes > 0);
 });
 
 test('CLI rejects unavailable native generation before execution', async () => {

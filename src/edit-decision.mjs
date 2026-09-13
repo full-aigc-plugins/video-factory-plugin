@@ -54,3 +54,17 @@ export function analyzeEditPolicy(decision) {
   }
   return { duplicateShots: duplicate ? 'FAIL' : 'PASS', rhythm };
 }
+
+const dissolveDuration = (previous, current) => Math.min(0.5, previous / 2, current / 2);
+
+export function effectiveAssemblyDuration(durations, transitions) {
+  return durations.reduce((total, duration, index) => index === 0
+    ? duration
+    : total + duration - (transitions[index] === 'dissolve' ? dissolveDuration(durations[index - 1], duration) : 0), 0);
+}
+
+export function editDurationSeconds(decision) {
+  const secondsPerTick = decision.timebase.numerator / decision.timebase.denominator;
+  const durations = decision.clips.map((clip) => (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick);
+  return effectiveAssemblyDuration(durations, decision.clips.map((clip) => clip.transition));
+}

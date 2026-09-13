@@ -1,4 +1,5 @@
 import { canonicalHash } from './plan.mjs';
+export { effectiveAssemblyDuration } from './edit-decision.mjs';
 
 const DIMENSIONS = {
   '16:9': [1920, 1080],
@@ -55,10 +56,6 @@ export function compileAssembly(listPath, profile, destination) {
 const dissolveDuration = (previous, current, transition) => transition === 'dissolve'
   ? Math.min(0.5, previous / 2, current / 2)
   : 0.001;
-
-export function effectiveAssemblyDuration(durations, transitions) {
-  return durations.reduce((total, duration, index) => index === 0 ? duration : total + duration - (transitions[index] === 'dissolve' ? dissolveDuration(durations[index - 1], duration, 'dissolve') : 0), 0);
-}
 
 export function compileDissolveAssembly(paths, durations, transitions, profile, destination) {
   if (paths.length < 2) throw new Error('dissolve assembly requires at least two segments');
