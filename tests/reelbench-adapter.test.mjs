@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { assertReviewInput, mapGateOutput, runAnalyzeEvidence, runAnalyzeSeed, reviewSyncCommand } from '../src/integrations/reelbench-adapter.mjs';
+import { validateSchemaInstance } from '../src/schema-lite.mjs';
 
 test('analyze seed invokes the original upstream script as argv and persists raw stdout', () => {
   const out = mkdtempSync(join(tmpdir(), 'reelbench-adapter-'));
@@ -51,4 +52,10 @@ test('analysis evidence runs original seed, frames and both contact sheets befor
   assert.deepEqual(calls.map((call) => call.args[1]), ['seed', 'frames', 'sheet', 'sheet']);
   assert.equal(calls.every((call) => call.options.shell === false), true);
   assert.equal(evidence.status, 'AWAITING_CODEX_ANNOTATION');
+  assert.equal(existsSync(evidence.manifestPath), true);
+  const manifest = JSON.parse(readFileSync(evidence.manifestPath, 'utf8'));
+  assert.equal(manifest.upstreamRevision, '75520c7b32ab5af8b22c5e4f79705efbbc0d8e07');
+  assert.ok(manifest.artifacts.some((artifact) => artifact.path === 'shots.json' && /^[a-f0-9]{64}$/.test(artifact.sha256)));
+  const evidenceSchema = JSON.parse(readFileSync('schemas/reelbench_evidence.schema.json', 'utf8'));
+  assert.deepEqual(validateSchemaInstance(evidenceSchema, evidence), []);
 });

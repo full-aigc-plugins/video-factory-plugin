@@ -1,12 +1,14 @@
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { collectMedia } from '../media-collector.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SHOTS_SCRIPT = join(ROOT, 'skills/video-shots/scripts/video-shots.mjs');
 const SYNC_SCRIPT = join(ROOT, 'skills/video-sync/scripts/video-sync.mjs');
+const UPSTREAM_REVISION = '75520c7b32ab5af8b22c5e4f79705efbbc0d8e07';
 
 const defaultRunner = (bin, args, options) => spawnSync(bin, args, { ...options, encoding: 'utf8' });
 
@@ -41,7 +43,18 @@ export function runAnalyzeEvidence(video, outputDir, { runner = defaultRunner, n
   }
   const evidenceLogPath = join(outputDir, 'evidence.stderr.txt');
   writeFileSync(evidenceLogPath, logs.join('\n'));
-  return { ...evidence, sheetsPath, evidenceLogPath, status: 'AWAITING_CODEX_ANNOTATION' };
+  const visit = (directory) => existsSync(directory) ? readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name);
+    return entry.isDirectory() ? visit(path) : entry.isFile() ? [path] : [];
+  }) : [];
+  const artifacts = visit(outputDir).sort().map((path) => ({
+    path: relative(outputDir, path),
+    bytes: statSync(path).size,
+    sha256: createHash('sha256').update(readFileSync(path)).digest('hex'),
+  }));
+  const manifestPath = join(outputDir, 'reelbench-evidence.json');
+  writeFileSync(manifestPath, `${JSON.stringify({ schemaVersion: '1.0.0', upstreamRevision: UPSTREAM_REVISION, status: 'AWAITING_CODEX_ANNOTATION', artifacts }, null, 2)}\n`);
+  return { ...evidence, sheetsPath, evidenceLogPath, manifestPath, upstreamRevision: UPSTREAM_REVISION, status: 'AWAITING_CODEX_ANNOTATION' };
 }
 
 export function mapGateOutput(output) {
