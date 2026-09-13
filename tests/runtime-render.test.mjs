@@ -110,10 +110,12 @@ test('approved final orchestrator binds audio and subtitle assets then awaits ex
   const image = join(root, 'frame.png');
   const audio = join(root, 'voice.wav');
   const music = join(root, 'music.wav');
+  const watermark = join(root, 'watermark.png');
   const subtitle = join(root, 'captions.srt');
   execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=orange:s=64x64', '-frames:v', '1', image]);
   execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'sine=frequency=330:duration=1:sample_rate=48000', audio]);
   execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'sine=frequency=220:duration=0.5:sample_rate=48000', music]);
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=cyan:s=32x16', '-frames:v', '1', watermark]);
   writeFileSync(subtitle, '1\n00:00:00,000 --> 00:00:00,800\nFactory final\n');
   const plan = {
     schemaVersion: '1.0.0', id: 'approved-final-job', mode: 'local_composition', round: 1,
@@ -122,6 +124,7 @@ test('approved final orchestrator binds audio and subtitle assets then awaits ex
       { id: 'A02', path: 'voice.wav', sha256: await sha256File(audio), kind: 'audio' },
       { id: 'A03', path: 'captions.srt', sha256: await sha256File(subtitle), kind: 'subtitle' },
       { id: 'A04', path: 'music.wav', sha256: await sha256File(music), kind: 'audio' },
+      { id: 'A05', path: 'watermark.png', sha256: await sha256File(watermark), kind: 'image', source: 'user' },
     ],
     editDecision: { schemaVersion: '1.0.0', id: 'E01', revision: 1, timebase: { numerator: 1, denominator: 30 }, clips: [
       { id: 'C01', assetId: 'A01', sourceInTicks: 0, sourceOutTicks: 30, timelineInTicks: 0, track: 0, transition: 'cut', gainDb: 0 },
@@ -132,7 +135,7 @@ test('approved final orchestrator binds audio and subtitle assets then awaits ex
         { assetId: 'A02', role: 'narration', gainDb: 0, timelineInTicks: 0 },
         { assetId: 'A04', role: 'music', gainDb: -12, timelineInTicks: 15 },
       ],
-      subtitleAssetId: 'A03', watermarkAssetId: 'A01', title: 'Approved final',
+      subtitleAssetId: 'A03', watermarkAssetId: 'A05', title: 'Approved final',
     },
   };
   const quote = quotePlan(plan, 'final', 1);
