@@ -25,6 +25,19 @@ export function markSegment(job, id, receipt) {
   return { ...job, revision: job.revision + 1, segments: job.segments.map((segment) => segment.id === id ? { ...segment, state: 'Completed', attempts: segment.attempts + 1, receipt } : segment) };
 }
 
+export function failSegment(job, id, error) {
+  if (!job.segments.some((segment) => segment.id === id)) throw new Error(`unknown segment: ${id}`);
+  const failure = { message: String(error?.message ?? error).slice(0, 1000) };
+  if (error?.code) failure.code = String(error.code).slice(0, 100);
+  return {
+    ...job,
+    revision: job.revision + 1,
+    segments: job.segments.map((segment) => segment.id === id
+      ? { ...segment, state: 'Failed', attempts: segment.attempts + 1, error: failure }
+      : segment),
+  };
+}
+
 export const pendingSegments = (job) => job.segments.filter((segment) => segment.state === 'Pending').map((segment) => segment.id);
 
 const rejectSecrets = (value) => {

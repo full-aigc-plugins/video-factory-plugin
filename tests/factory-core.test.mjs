@@ -7,7 +7,7 @@ import { sha256File } from '../src/hash.mjs';
 import { resolveGrantedFile, registerAssets } from '../src/paths.mjs';
 import { canonicalHash, validateVideoPlan } from '../src/plan.mjs';
 import { quotePlan, verifyApproval } from '../src/approval.mjs';
-import { markSegment, newJob, pendingSegments, readLedger, transition, writeLedger } from '../src/job-ledger.mjs';
+import { failSegment, markSegment, newJob, pendingSegments, readLedger, transition, writeLedger } from '../src/job-ledger.mjs';
 
 test('asset registration binds regular local files and rejects URL or symlink escape', async () => {
   const root = mkdtempSync(join(tmpdir(), 'video-assets-'));
@@ -51,4 +51,15 @@ test('atomic ledger recovery never returns completed segments as pending', () =>
   assert.deepEqual(pendingSegments(restored), ['S02']);
   assert.equal(JSON.parse(readFileSync(file, 'utf8')).revision, restored.revision);
   assert.throws(() => transition(restored, 'Completed'), /illegal transition/);
+});
+
+test('a failed segment is recorded once and cannot be selected for automatic retry', () => {
+  let job = newJob({ id: 'J2', planHash: 'a'.repeat(64), stage: 'rough', shotIds: ['S01', 'S02'] });
+  job = transition(job, 'Running', 'approved');
+  job = failSegment(job, 'S01', new Error('decoder rejected source'));
+  assert.equal(job.segments[0].state, 'Failed');
+  assert.equal(job.segments[0].attempts, 1);
+  assert.match(job.segments[0].error.message, /decoder rejected/);
+  assert.deepEqual(pendingSegments(job), ['S02']);
+  assert.equal(transition(job, 'Partial', 'manual decision required').state, 'Partial');
 });

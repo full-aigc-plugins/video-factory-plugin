@@ -5,7 +5,7 @@ import { assembleVideo } from './assembler.mjs';
 import { validateEditDecision } from './edit-decision.mjs';
 import { effectiveAssemblyDuration, outputProfile, segmentKey } from './ffmpeg-compiler.mjs';
 import { renderFinal } from './final-renderer.mjs';
-import { markSegment, newJob, pendingSegments, readLedger, transition, writeLedger } from './job-ledger.mjs';
+import { failSegment, markSegment, newJob, pendingSegments, readLedger, transition, writeLedger } from './job-ledger.mjs';
 import { evaluateMedia } from './media-evaluator.mjs';
 import { analyzeMedia } from './media-analysis.mjs';
 import { registerAssets } from './paths.mjs';
@@ -44,9 +44,16 @@ export async function runApproved({ planPath, approvalPath, ledgerPath, inputRoo
     const asset = assets[clip.assetId];
     const descriptor = { id: clip.id, assetHash: asset.sha256, sourceInTicks: clip.sourceInTicks, sourceOutTicks: clip.sourceOutTicks, profile };
     const destination = join(workRoot, 'segments', `${clip.id}-${segmentKey(descriptor)}.mp4`);
-    const outcome = await renderSegment({ source: { id: clip.id, kind: asset.kind, path: asset.path, sourceInSeconds: clip.sourceInTicks * secondsPerTick, durationSeconds: (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick, motion: clip.motion ?? 'static', transition: clip.transition }, profile, destination });
-    job = markSegment(job, clip.id, outcome.receipt);
-    writeLedger(ledgerPath, job);
+    try {
+      const outcome = await renderSegment({ source: { id: clip.id, kind: asset.kind, path: asset.path, sourceInSeconds: clip.sourceInTicks * secondsPerTick, durationSeconds: (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick, motion: clip.motion ?? 'static', transition: clip.transition }, profile, destination });
+      job = markSegment(job, clip.id, outcome.receipt);
+      writeLedger(ledgerPath, job);
+    } catch (error) {
+      job = failSegment(job, clip.id, error);
+      job = transition(job, 'Partial', 'segment failed; automatic retry disabled');
+      writeLedger(ledgerPath, job);
+      throw error;
+    }
   }
   job = transition(job, 'Collecting', 'all segments rendered');
   writeLedger(ledgerPath, job);
