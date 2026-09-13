@@ -5,15 +5,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { collectMedia } from '../src/media-collector.mjs';
-import { reviewSyncCommand, runAnalyzeSeed } from '../src/integrations/reelbench-adapter.mjs';
+import { reviewSyncCommand, runAnalyzeEvidence } from '../src/integrations/reelbench-adapter.mjs';
 
 test('original ReelBench scripts analyze real media and produce a synchronized review video', { timeout: 60000 }, async () => {
   const root = mkdtempSync(join(tmpdir(), 'reelbench-real-'));
   const video = join(root, 'two-shots.mp4');
   execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=red:s=320x180:r=30:d=1', '-f', 'lavfi', '-i', 'color=blue:s=320x180:r=30:d=1', '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-filter_complex', '[0:v][1:v]concat=n=2:v=1:a=0[out]', '-map', '[out]', '-map', '2:a:0', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', video]);
-  const evidence = runAnalyzeSeed(video, join(root, 'analysis'), { threshold: 0.15 });
+  const evidence = runAnalyzeEvidence(video, join(root, 'analysis'), { threshold: 0.15 });
   const seeded = JSON.parse(readFileSync(evidence.shotsPath, 'utf8'));
   assert.ok(seeded.shots.length >= 2);
+  assert.ok(existsSync(join(evidence.framesPath, 'S01a.jpg')));
+  assert.ok(existsSync(join(evidence.sheetsPath, 'sheet-a01.jpg')));
   const shots = {
     source: 'two-shots.mp4', title: 'Two shots', lang: 'zh',
     meta: { durationSeconds: 2, fps: 30, width: 320, height: 180, aspect: '16:9', codec: 'h264', hasAudio: false },

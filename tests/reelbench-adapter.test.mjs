@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { assertReviewInput, mapGateOutput, runAnalyzeSeed, reviewSyncCommand } from '../src/integrations/reelbench-adapter.mjs';
+import { assertReviewInput, mapGateOutput, runAnalyzeEvidence, runAnalyzeSeed, reviewSyncCommand } from '../src/integrations/reelbench-adapter.mjs';
 
 test('analyze seed invokes the original upstream script as argv and persists raw stdout', () => {
   const out = mkdtempSync(join(tmpdir(), 'reelbench-adapter-'));
@@ -38,4 +38,17 @@ test('review sync command targets original video-sync export without a shell', (
 test('review sync rejects a video without the normalized audio track that bounds upstream output', () => {
   assert.throws(() => assertReviewInput({ hasAudio: false }), /audio track/);
   assert.doesNotThrow(() => assertReviewInput({ hasAudio: true }));
+});
+
+test('analysis evidence runs original seed, frames and both contact sheets before Codex annotation', () => {
+  const out = mkdtempSync(join(tmpdir(), 'reelbench-evidence-'));
+  const calls = [];
+  const runner = (bin, args, options) => {
+    calls.push({ bin, args, options });
+    return { status: 0, stdout: args[1] === 'seed' ? '{"shots":[]}' : '', stderr: '' };
+  };
+  const evidence = runAnalyzeEvidence('/input/source.mp4', out, { runner, node: '/usr/bin/node' });
+  assert.deepEqual(calls.map((call) => call.args[1]), ['seed', 'frames', 'sheet', 'sheet']);
+  assert.equal(calls.every((call) => call.options.shell === false), true);
+  assert.equal(evidence.status, 'AWAITING_CODEX_ANNOTATION');
 });

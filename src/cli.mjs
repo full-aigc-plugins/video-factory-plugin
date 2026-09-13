@@ -8,7 +8,7 @@ import { recoverySummary, runApproved } from './orchestrator.mjs';
 import { canonicalHash, validateVideoPlan } from './plan.mjs';
 import { probeCapabilities } from './probe.mjs';
 import { readLedger } from './job-ledger.mjs';
-import { assertReviewInput, reviewSyncCommand, runAnalyzeSeed } from './integrations/reelbench-adapter.mjs';
+import { assertReviewInput, reviewSyncCommand, runAnalyzeEvidence } from './integrations/reelbench-adapter.mjs';
 
 const HELP = `video-factory — automatic editing and verified video composition
 
@@ -48,7 +48,7 @@ export async function main(argv, io = { stdout: process.stdout, stderr: process.
     }
     if (command === 'analyze') {
       const out = resolve(String(flag(argv, '--out', 'reelbench-analysis')));
-      io.stdout.write(`${JSON.stringify(runAnalyzeSeed(argv[1], out), null, 2)}\n`); return 0;
+      io.stdout.write(`${JSON.stringify(runAnalyzeEvidence(argv[1], out), null, 2)}\n`); return 0;
     }
     if (command === 'review-sync') {
       assertReviewInput(await collectMedia(argv[1], { provenanceOk: true }));
