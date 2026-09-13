@@ -44,5 +44,7 @@ test('GitHub CI verifies the supported Node floor and current runtime', () => {
   const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
   assert.match(workflow, /node-version: \[18, 24\]/);
   assert.match(workflow, /npm test/);
+  assert.match(workflow, /apt-get install -y ffmpeg/);
+  assert.match(workflow, /command -v ffmpeg/);
   assert.match(workflow, /git diff --exit-code -- skills\/video-shots skills\/video-sync/);
 });
