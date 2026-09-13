@@ -1,5 +1,10 @@
-import { closeSync, fsyncSync, openSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { closeSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { validateSchemaInstance } from './schema-lite.mjs';
+
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const JOB_SCHEMA = JSON.parse(readFileSync(join(ROOT, 'schemas', 'video_job.schema.json'), 'utf8'));
 
 const TRANSITIONS = {
   AwaitingApproval: ['Running', 'Blocked'],
@@ -63,8 +68,15 @@ const rejectSecrets = (value) => {
   if (/"(?:api[_-]?key|token|password|secret)"\s*:/i.test(text)) throw new Error('credential field is not allowed');
 };
 
+const validateJob = (job) => {
+  const issues = validateSchemaInstance(JOB_SCHEMA, job);
+  if (issues.length) throw new Error(`${issues[0].path}: ${issues[0].message}`);
+};
+
 export function writeLedger(path, job) {
   rejectSecrets(job);
+  validateJob(job);
+  mkdirSync(dirname(path), { recursive: true });
   const temp = join(dirname(path), `.${job.id}.${process.pid}.tmp`);
   const fd = openSync(temp, 'w', 0o600);
   try { writeFileSync(fd, `${JSON.stringify(job, null, 2)}\n`); fsyncSync(fd); } finally { closeSync(fd); }
@@ -74,5 +86,6 @@ export function writeLedger(path, job) {
 export function readLedger(path) {
   const job = JSON.parse(readFileSync(path, 'utf8'));
   rejectSecrets(job);
+  validateJob(job);
   return job;
 }

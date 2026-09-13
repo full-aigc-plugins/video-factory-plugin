@@ -1,7 +1,7 @@
 const SUPPORTED = new Set([
   '$schema', '$id', 'title', 'description', 'type', 'properties', 'required',
   'additionalProperties', 'items', 'enum', 'const', 'minimum', 'maximum',
-  'minLength', 'maxLength', 'minItems', 'maxItems', 'pattern',
+  'minLength', 'maxLength', 'minItems', 'maxItems', 'pattern', '$defs', '$ref', 'oneOf',
 ]);
 
 export function assertSupportedSchema(schema, path = '$') {
@@ -10,14 +10,26 @@ export function assertSupportedSchema(schema, path = '$') {
     if (!SUPPORTED.has(key)) throw new Error(`${path}: unsupported schema keyword ${key}`);
   }
   for (const [name, child] of Object.entries(schema.properties ?? {})) assertSupportedSchema(child, `${path}.properties.${name}`);
+  for (const [name, child] of Object.entries(schema.$defs ?? {})) assertSupportedSchema(child, `${path}.$defs.${name}`);
   if (schema.items) assertSupportedSchema(schema.items, `${path}.items`);
+  for (const [index, child] of (schema.oneOf ?? []).entries()) assertSupportedSchema(child, `${path}.oneOf[${index}]`);
 }
 
 const actualType = (value) => Array.isArray(value) ? 'array' : value === null ? 'null' : typeof value;
 
-export function validateSchemaInstance(schema, value, path = '$') {
+export function validateSchemaInstance(schema, value, path = '$', root = schema) {
   const issues = [];
   const fail = (message) => issues.push({ path, message });
+  if (schema.$ref) {
+    if (!schema.$ref.startsWith('#/')) return [{ path, message: `unsupported reference ${schema.$ref}` }];
+    const target = schema.$ref.slice(2).split('/').reduce((current, key) => current?.[key.replaceAll('~1', '/').replaceAll('~0', '~')], root);
+    return target ? validateSchemaInstance(target, value, path, root) : [{ path, message: `unresolved reference ${schema.$ref}` }];
+  }
+  if (schema.oneOf) {
+    const matches = schema.oneOf.map((candidate) => validateSchemaInstance(candidate, value, path, root)).filter((candidate) => candidate.length === 0);
+    if (matches.length !== 1) fail('must match exactly one oneOf branch');
+    return issues;
+  }
   if (schema.const !== undefined && value !== schema.const) fail(`must equal ${JSON.stringify(schema.const)}`);
   if (schema.enum && !schema.enum.includes(value)) fail(`must be one of ${schema.enum.join(', ')}`);
   const observed = actualType(value);
@@ -32,13 +44,13 @@ export function validateSchemaInstance(schema, value, path = '$') {
       for (const key of Object.keys(value)) if (!(key in (schema.properties ?? {}))) issues.push({ path: `${path}.${key}`, message: 'additional property is not allowed' });
     }
     for (const [key, child] of Object.entries(schema.properties ?? {})) {
-      if (key in value) issues.push(...validateSchemaInstance(child, value[key], `${path}.${key}`));
+      if (key in value) issues.push(...validateSchemaInstance(child, value[key], `${path}.${key}`, root));
     }
   }
   if (schema.type === 'array') {
     if (schema.minItems !== undefined && value.length < schema.minItems) fail(`must contain at least ${schema.minItems} items`);
     if (schema.maxItems !== undefined && value.length > schema.maxItems) fail(`must contain at most ${schema.maxItems} items`);
-    value.forEach((item, index) => issues.push(...validateSchemaInstance(schema.items, item, `${path}[${index}]`)));
+    value.forEach((item, index) => issues.push(...validateSchemaInstance(schema.items, item, `${path}[${index}]`, root)));
   }
   if (schema.type === 'string') {
     if (schema.minLength !== undefined && value.length < schema.minLength) fail(`must have length >= ${schema.minLength}`);

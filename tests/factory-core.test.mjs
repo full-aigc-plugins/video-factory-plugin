@@ -9,6 +9,14 @@ import { canonicalHash, validateVideoPlan } from '../src/plan.mjs';
 import { quotePlan, verifyApproval } from '../src/approval.mjs';
 import { failSegment, markSegment, newJob, pendingSegments, readLedger, recordHumanDecision, transition, writeLedger } from '../src/job-ledger.mjs';
 
+const receiptFixture = () => ({
+  schemaVersion: '1.0.0', path: 'S01.mp4', sha256: 'b'.repeat(64), bytes: 1024, durationSeconds: 1,
+  width: 320, height: 180, fps: 30, hasAudio: true, container: 'mov,mp4', streamCount: 2,
+  videoCodec: 'h264', pixelFormat: 'yuv420p', videoStartSeconds: 0,
+  audioCodec: 'aac', audioSampleRate: 48000, audioChannels: 2, audioStartSeconds: 0,
+  exists: true, hashVerified: true, decodeOk: true, provenanceOk: true, timelineOk: true,
+});
+
 test('asset registration binds regular local files and rejects URL or symlink escape', async () => {
   const root = mkdtempSync(join(tmpdir(), 'video-assets-'));
   writeFileSync(join(root, 'clip.bin'), 'clip-one');
@@ -75,12 +83,13 @@ test('atomic ledger recovery never returns completed segments as pending', () =>
   const file = join(root, 'job.json');
   let job = newJob({ id: 'J1', planHash: 'a'.repeat(64), stage: 'rough', shotIds: ['S01', 'S02'] });
   job = transition(job, 'Running', 'approved');
-  job = markSegment(job, 'S01', { path: 'S01.mp4', sha256: 'b'.repeat(64) });
+  job = markSegment(job, 'S01', receiptFixture());
   writeLedger(file, job);
   const restored = readLedger(file);
   assert.deepEqual(pendingSegments(restored), ['S02']);
   assert.equal(JSON.parse(readFileSync(file, 'utf8')).revision, restored.revision);
   assert.throws(() => transition(restored, 'Completed'), /illegal transition/);
+  assert.throws(() => writeLedger(file, { ...restored, unexpected: true }), /additional property/);
 });
 
 test('a failed segment is recorded once and cannot be selected for automatic retry', () => {
@@ -97,7 +106,7 @@ test('a failed segment is recorded once and cannot be selected for automatic ret
 test('reused segment receipts do not count as new render attempts', () => {
   let job = newJob({ id: 'J3', planHash: 'a'.repeat(64), stage: 'rough', shotIds: ['S01'] });
   job = transition(job, 'Running', 'approved');
-  job = markSegment(job, 'S01', { path: 'S01.mp4', sha256: 'b'.repeat(64) }, { attempts: 0, reused: true });
+  job = markSegment(job, 'S01', receiptFixture(), { attempts: 0, reused: true });
   assert.equal(job.segments[0].attempts, 0);
   assert.equal(job.segments[0].reused, true);
 });

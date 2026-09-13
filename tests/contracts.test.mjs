@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { assertSupportedSchema, validateSchemaInstance } from '../src/schema-lite.mjs';
 import { reviseEditDecision, validateEditDecision } from '../src/edit-decision.mjs';
+import { evaluateMedia } from '../src/media-evaluator.mjs';
+import { newJob, recordHumanDecision } from '../src/job-ledger.mjs';
 
 const schema = (name) => JSON.parse(readFileSync(`schemas/${name}.schema.json`, 'utf8'));
 
@@ -61,4 +63,20 @@ test('edit decision behavior rejects duplicate ids, overlaps and invalid source 
   assert.throws(() => validateEditDecision({ ...decision, clips: [decision.clips[0], { ...decision.clips[1], id: 'C01' }] }, { A01: 60, A02: 120 }), /duplicate clip id/);
   assert.throws(() => validateEditDecision({ ...decision, clips: [decision.clips[0], { ...decision.clips[1], timelineInTicks: 30 }] }, { A01: 60, A02: 120 }), /timeline overlap/);
   assert.throws(() => validateEditDecision({ ...decision, clips: [{ ...decision.clips[0], sourceOutTicks: 61 }] }, { A01: 60 }), /source range/);
+});
+
+test('runtime job and score producers conform to their public schemas', () => {
+  const job = newJob({ id: 'J01', planHash: 'a'.repeat(64), stage: 'rough', shotIds: ['C01'] });
+  assert.deepEqual(validateSchemaInstance(schema('video_job'), job), []);
+  const receipt = {
+    schemaVersion: '1.0.0', path: '/output/final.mp4', sha256: 'b'.repeat(64), bytes: 1024,
+    exists: true, hashVerified: true, decodeOk: true, width: 320, height: 180, fps: 30, durationSeconds: 1,
+    hasAudio: true, provenanceOk: true, timelineOk: true, container: 'mov,mp4', streamCount: 2,
+    videoCodec: 'h264', pixelFormat: 'yuv420p', videoStartSeconds: 0,
+    audioCodec: 'aac', audioSampleRate: 48000, audioChannels: 2, audioStartSeconds: 0,
+  };
+  const scores = evaluateMedia({ output: { width: 320, height: 180, fps: 30, durationSeconds: 1, requireAudio: false } }, receipt);
+  assert.deepEqual(validateSchemaInstance(schema('media_scores'), scores), []);
+  const completed = recordHumanDecision({ ...job, state: 'ReviewReady', artifact: receipt, scores }, 'approved', 'played');
+  assert.deepEqual(validateSchemaInstance(schema('video_job'), completed), []);
 });
