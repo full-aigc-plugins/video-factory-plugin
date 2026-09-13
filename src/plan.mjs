@@ -33,9 +33,13 @@ export function validateVideoPlan(plan) {
   if (!Number.isFinite(fps) || fps <= 0 || fps > 120) throw new Error('invalid output fps');
   const assets = new Map(plan.assets.map((asset) => [asset.id, asset]));
   if (assets.size !== plan.assets.length) throw new Error('duplicate asset id');
-  for (const [field, kind] of [['audioAssetId', 'audio'], ['subtitleAssetId', 'subtitle']]) {
+  if (plan.output.audioAssetId && plan.output.audioTracks?.length) throw new Error('use audioAssetId or audioTracks, not both');
+  for (const [field, kind] of [['audioAssetId', 'audio'], ['subtitleAssetId', 'subtitle'], ['watermarkAssetId', 'image']]) {
     const id = plan.output?.[field];
     if (id && assets.get(id)?.kind !== kind) throw new Error(`${field} must reference a ${kind} asset`);
+  }
+  for (const track of plan.output?.audioTracks ?? []) {
+    if (assets.get(track.assetId)?.kind !== 'audio') throw new Error(`audio track ${track.assetId} must reference an audio asset`);
   }
   return plan;
 }

@@ -34,6 +34,8 @@ test('plan identity is stable and approval binds stage, round and both hashes', 
   assert.equal(validateVideoPlan(plan), plan);
   assert.throws(() => validateVideoPlan({ ...plan, unexpected: true }), /additional property/);
   assert.throws(() => validateVideoPlan({ ...plan, output: { ...plan.output, audioAssetId: 'A1' } }), /audio asset/);
+  assert.throws(() => validateVideoPlan({ ...plan, output: { ...plan.output, audioTracks: [{ assetId: 'A1', role: 'music', gainDb: -6, timelineInTicks: 0 }] } }), /audio track.*audio asset/);
+  assert.throws(() => validateVideoPlan({ ...plan, output: { ...plan.output, watermarkAssetId: 'A1' }, assets: [{ ...plan.assets[0], kind: 'video' }] }), /watermarkAssetId.*image asset/);
   const quote = quotePlan(plan, 'rough', 1);
   const approval = { schemaVersion: '1.0.0', stage: 'rough', planHash: quote.planHash, editHash: quote.editHash, round: 1, quoteRevision: 1, acceptedAt: '2026-09-14T00:00:00Z' };
   assert.doesNotThrow(() => verifyApproval(approval, quote));

@@ -62,14 +62,21 @@ export async function runApproved({ planPath, approvalPath, ledgerPath, inputRoo
   const clipDurations = plan.editDecision.clips.map((clip) => (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick);
   const transitions = plan.editDecision.clips.map((clip) => clip.transition);
   const durationSeconds = effectiveAssemblyDuration(clipDurations, transitions);
-  const needsMastering = stage === 'final' && (plan.output.audioAssetId || plan.output.subtitleAssetId);
+  const needsMastering = stage === 'final' && (plan.output.audioAssetId || plan.output.audioTracks?.length || plan.output.subtitleAssetId || plan.output.watermarkAssetId || plan.output.title);
   const assemblyPath = needsMastering ? join(workRoot, `assembled-${canonicalHash(plan).slice(0, 12)}.mp4`) : artifactPath;
   let receipt = await assembleVideo(segmentPaths, profile, assemblyPath, 120000, { durations: clipDurations, transitions });
   if (needsMastering) {
     receipt = await renderFinal({
       inputVideo: assemblyPath,
       audioPath: plan.output.audioAssetId ? assets[plan.output.audioAssetId].path : null,
+      audioTracks: plan.output.audioTracks?.map((track) => ({
+        ...track,
+        path: assets[track.assetId].path,
+        timelineInSeconds: track.timelineInTicks * secondsPerTick,
+      })),
       subtitlePath: plan.output.subtitleAssetId ? assets[plan.output.subtitleAssetId].path : null,
+      watermarkPath: plan.output.watermarkAssetId ? assets[plan.output.watermarkAssetId].path : null,
+      title: plan.output.title,
       profile,
       destination: artifactPath,
       durationSeconds,

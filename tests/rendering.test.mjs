@@ -21,6 +21,28 @@ test('final mastering adds declared audio and subtitles through bounded argv', (
   assert.ok(!spec.args.join(' ').includes('http:'));
 });
 
+test('final mastering mixes role-based audio tracks and overlays a registered watermark', () => {
+  const spec = compileMaster({
+    inputVideo: '/input/rough.mp4',
+    audioTracks: [
+      { path: '/input/voice.wav', gainDb: 0, timelineInSeconds: 0, role: 'narration' },
+      { path: '/input/music.wav', gainDb: -12, timelineInSeconds: 0.5, role: 'music' },
+    ],
+    watermarkPath: '/input/logo.png',
+    title: 'Approved cut',
+    profile: outputProfile('final', { aspect: '16:9' }),
+    destination: '/output/final.mp4',
+    durationSeconds: 3,
+  });
+  const graph = spec.args[spec.args.indexOf('-filter_complex') + 1];
+  assert.match(graph, /adelay=500\|500/);
+  assert.match(graph, /volume=-12dB/);
+  assert.match(graph, /amix=inputs=2/);
+  assert.match(graph, /overlay=/);
+  assert.ok(spec.args.includes('title=Approved cut'));
+  assert.equal(spec.options.shell, false);
+});
+
 test('image and clip segments compile to bounded argv without a shell or network protocol', () => {
   const image = compileSegment({ id: 'C01', kind: 'image', path: '/input/a.png', durationSeconds: 2, motion: 'static' }, profile, '/work/C01.mp4');
   assert.equal(image.bin, 'ffmpeg');
