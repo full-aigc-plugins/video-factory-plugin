@@ -288,3 +288,32 @@ test('automatic rough cut consumes multiple real clips including a Blender publi
   assert.ok(Math.abs(result.receipt.durationSeconds - 1.5) < 0.15);
   assert.equal(result.scores.failedRequired.length, 0);
 });
+
+test('six-image story plan renders varied camera motion into a verified rough cut', { timeout: 30000 }, async () => {
+  const root = mkdtempSync(join(tmpdir(), 'video-story-'));
+  const colors = ['red', 'orange', 'yellow', 'green', 'blue', 'purple'];
+  const assets = [];
+  for (let index = 0; index < colors.length; index += 1) {
+    const path = join(root, `story-${index + 1}.png`);
+    execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', `color=${colors[index]}:s=64x64`, '-frames:v', '1', path]);
+    assets.push({ id: `A0${index + 1}`, path: `story-${index + 1}.png`, sha256: await sha256File(path), kind: 'image', durationTicks: 15, source: 'codex-image-factory' });
+  }
+  const motions = ['static', 'zoom-in', 'pan-left', 'zoom-out', 'pan-right', 'static'];
+  const clips = assets.map((asset, index) => ({ id: `C0${index + 1}`, assetId: asset.id, sourceInTicks: 0, sourceOutTicks: 15, timelineInTicks: index * 15, track: 0, transition: index % 2 ? 'fade' : 'cut', motion: motions[index], gainDb: 0 }));
+  const plan = {
+    schemaVersion: '1.0.0', id: 'six-image-story', mode: 'local_composition', round: 1, assets,
+    editDecision: { schemaVersion: '1.0.0', id: 'E01', revision: 1, timebase: { numerator: 1, denominator: 30 }, clips },
+    output: { aspect: '16:9', width: 320, height: 180, fps: 30, requireAudio: false },
+  };
+  const quote = quotePlan(plan, 'rough', 1);
+  const approval = { schemaVersion: '1.0.0', stage: 'rough', planHash: quote.planHash, editHash: quote.editHash, round: 1, quoteRevision: 1, acceptedAt: '2026-09-14T00:00:00Z' };
+  const planPath = join(root, 'plan.json');
+  const approvalPath = join(root, 'approval.json');
+  writeFileSync(planPath, JSON.stringify(plan));
+  writeFileSync(approvalPath, JSON.stringify(approval));
+  const result = await runApproved({ planPath, approvalPath, ledgerPath: join(root, 'job.json'), inputRoot: root, workRoot: join(root, 'work'), outputRoot: join(root, 'output'), stage: 'rough' });
+  assert.equal(result.job.segments.length, 6);
+  assert.equal(result.job.state, 'ReviewReady');
+  assert.equal(result.scores.failedRequired.length, 0);
+  assert.ok(Math.abs(result.receipt.durationSeconds - 3) < 0.15);
+});
