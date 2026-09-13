@@ -80,3 +80,11 @@ test('a failed segment is recorded once and cannot be selected for automatic ret
   assert.deepEqual(pendingSegments(job), ['S02']);
   assert.equal(transition(job, 'Partial', 'manual decision required').state, 'Partial');
 });
+
+test('reused segment receipts do not count as new render attempts', () => {
+  let job = newJob({ id: 'J3', planHash: 'a'.repeat(64), stage: 'rough', shotIds: ['S01'] });
+  job = transition(job, 'Running', 'approved');
+  job = markSegment(job, 'S01', { path: 'S01.mp4', sha256: 'b'.repeat(64) }, { attempts: 0, reused: true });
+  assert.equal(job.segments[0].attempts, 0);
+  assert.equal(job.segments[0].reused, true);
+});

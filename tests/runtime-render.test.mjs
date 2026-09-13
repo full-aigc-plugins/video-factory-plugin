@@ -33,6 +33,23 @@ test('real FFmpeg renders resumable image segments and a verified rough cut', { 
   assert.equal(scores.decision, 'pass');
 });
 
+test('content-addressed segment reuse requires an untampered file and sidecar receipt', { timeout: 30000 }, async () => {
+  const root = mkdtempSync(join(tmpdir(), 'video-reuse-'));
+  const image = join(root, 'frame.png');
+  const destination = join(root, 'segment.mp4');
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=teal:s=64x64', '-frames:v', '1', image]);
+  const request = { source: { id: 'C01', kind: 'image', path: image, durationSeconds: 0.5, motion: 'static' }, profile: outputProfile('rough', { width: 320, height: 180 }), destination };
+  const first = await renderSegment(request);
+  const reused = await renderSegment(request);
+  assert.equal(reused.reused, true);
+  assert.equal(reused.attempts, 0);
+  assert.equal(reused.receipt.sha256, first.receipt.sha256);
+  writeFileSync(destination, 'tampered');
+  const repaired = await renderSegment(request);
+  assert.equal(repaired.reused, false);
+  assert.equal(repaired.receipt.decodeOk, true);
+});
+
 test('real FFmpeg assembles two normalized segments with a dissolve', { timeout: 30000 }, async () => {
   const root = mkdtempSync(join(tmpdir(), 'video-dissolve-'));
   const firstPath = join(root, 'first.mp4');

@@ -21,8 +21,8 @@ export function transition(job, next, note = '') {
   return { ...job, revision: job.revision + 1, state: next, history: [...job.history, { from: job.state, to: next, note }] };
 }
 
-export function markSegment(job, id, receipt) {
-  return { ...job, revision: job.revision + 1, segments: job.segments.map((segment) => segment.id === id ? { ...segment, state: 'Completed', attempts: segment.attempts + 1, receipt } : segment) };
+export function markSegment(job, id, receipt, { attempts = 1, reused = false } = {}) {
+  return { ...job, revision: job.revision + 1, segments: job.segments.map((segment) => segment.id === id ? { ...segment, state: 'Completed', attempts: segment.attempts + attempts, reused, receipt } : segment) };
 }
 
 export function failSegment(job, id, error) {

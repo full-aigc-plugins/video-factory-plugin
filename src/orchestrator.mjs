@@ -51,7 +51,7 @@ export async function runApproved({ planPath, approvalPath, ledgerPath, inputRoo
     const destination = join(workRoot, 'segments', `${clip.id}-${segmentKey(descriptor)}.mp4`);
     try {
       const outcome = await renderSegment({ source: { id: clip.id, kind: asset.kind, path: asset.path, sourceInSeconds: clip.sourceInTicks * secondsPerTick, durationSeconds: (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick, motion: clip.motion ?? 'static', transition: clip.transition }, profile, destination });
-      job = markSegment(job, clip.id, outcome.receipt);
+      job = markSegment(job, clip.id, outcome.receipt, { attempts: outcome.attempts, reused: outcome.reused });
       writeLedger(ledgerPath, job);
     } catch (error) {
       job = failSegment(job, clip.id, error);
