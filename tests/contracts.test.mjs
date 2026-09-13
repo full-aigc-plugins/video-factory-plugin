@@ -58,6 +58,11 @@ test('video plan schema closes asset handoff and output mastering fields', () =>
   assert.match(issues[0].message, /additional property/);
 });
 
+test('asset manifest accepts public Image Factory and Blender receipt fields', () => {
+  const manifest = { schemaVersion: '1.0.0', assets: [{ id: 'B01', path: 'scene.mp4', sha256: 'a'.repeat(64), kind: 'video', durationTicks: 90, source: 'codex-blender-plugin', license: 'user-authorized', authorizedAt: '2026-09-14T00:00:00Z', receiptPath: 'scene.receipt.json' }] };
+  assert.deepEqual(validateSchemaInstance(schema('asset_manifest'), manifest), []);
+});
+
 test('edit decision behavior rejects duplicate ids, overlaps and invalid source ranges', () => {
   assert.deepEqual(validateEditDecision(decision, { A01: 60, A02: 120 }), decision);
   assert.throws(() => validateEditDecision({ ...decision, clips: [decision.clips[0], { ...decision.clips[1], id: 'C01' }] }, { A01: 60, A02: 120 }), /duplicate clip id/);
