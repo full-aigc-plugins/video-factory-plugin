@@ -1,4 +1,4 @@
-# Codex Vedio Factory Local Composition 0.1.0 Implementation Plan
+# Codex Video Factory Local Composition 0.1.0 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -8,11 +8,11 @@
 
 **Tech Stack:** Node.js 18+ ESM and built-in `node:test`, FFmpeg/ffprobe, JSON Schema Draft 2020-12 documents with a repository-owned supported-keyword validator, Codex plugin Skills, no npm runtime dependencies, no API key.
 
-**Spec:** `docs/superpowers/specs/2026-09-14-codex-vedio-factory-plugin-design.md`
+**Spec:** `docs/superpowers/specs/2026-09-14-codex-video-factory-plugin-design.md`
 
 ## Global Constraints
 
-- Keep the user-specified `codex-vedio-factory-plugin` and `vedio-factory` spelling everywhere.
+- Use `codex-video-factory-plugin`, `codex-video-factory`, and `video-factory` consistently across repository, plugin, package, CLI, Skill, schema, and documentation identifiers.
 - Version 0.1.0 implements only `local_composition`; it must reject `codex_native_generation`.
 - Do not add PartMe Studio UI, Blender control, image generation, external video APIs, API keys, automatic retries, network inputs, or arbitrary FFmpeg argument passthrough.
 - Require Node.js 18+, `ffmpeg`, and `ffprobe`; Chrome and local TTS are not required in 0.1.0.
@@ -29,7 +29,7 @@
 .codex-plugin/plugin.json                 Codex distribution manifest
 .agents/plugins/marketplace.json          URL marketplace entry
 package.json                              ESM metadata and test scripts, zero dependencies
-bin/vedio-factory                         executable CLI shim
+bin/video-factory                         executable CLI shim
 schemas/                                  six closed public contracts
 src/cli.mjs                               command routing and stable exit codes
 src/schema-lite.mjs                       supported JSON Schema validation
@@ -58,13 +58,13 @@ docs/verification/                        offline and real-runtime evidence
 - Create: `.codex-plugin/plugin.json`
 - Create: `.agents/plugins/marketplace.json`
 - Create: `package.json`
-- Create: `bin/vedio-factory`
+- Create: `bin/video-factory`
 - Create: `src/cli.mjs`
 - Create: `tests/distribution.test.mjs`
 
 **Interfaces:**
 - Consumes: no prior task.
-- Produces: `main(argv: string[]): Promise<number>` and executable `bin/vedio-factory`.
+- Produces: `main(argv: string[]): Promise<number>` and executable `bin/video-factory`.
 
 - [ ] **Step 1: Write the failing distribution test**
 
@@ -75,7 +75,7 @@ test('distribution declares only the six approved skills', () => {
   assert.equal(manifest.skills, './skills/');
   assert.deepEqual(skillDirectories().sort(), EXPECTED_SKILLS);
   assert.equal(readJson('package.json').dependencies, undefined);
-  assert.ok(mode('bin/vedio-factory') & 0o111);
+  assert.ok(mode('bin/video-factory') & 0o111);
 });
 ```
 
@@ -89,17 +89,17 @@ Expected: FAIL because the manifest and executable do not exist.
 
 ```json
 {
-  "name": "codex-vedio-factory",
+  "name": "codex-video-factory",
   "version": "0.1.0",
   "description": "Approved, recoverable and verified local video composition for Codex",
   "author": {"name":"Full Stack Skills / PartMe.AI","url":"https://github.com/partme-ai"},
-  "homepage": "https://github.com/partme-ai/codex-vedio-factory-plugin",
-  "repository": "https://github.com/partme-ai/codex-vedio-factory-plugin",
+  "homepage": "https://github.com/partme-ai/codex-video-factory-plugin",
+  "repository": "https://github.com/partme-ai/codex-video-factory-plugin",
   "license": "Apache-2.0",
   "keywords": ["video", "composition", "ffmpeg", "receipt", "codex"],
   "skills": "./skills/",
   "interface": {
-    "displayName": "Codex Vedio Factory",
+    "displayName": "Codex Video Factory",
     "shortDescription": "Compose and verify local videos with Codex",
     "category": "Creativity",
     "capabilities": ["Interactive", "Read", "Write"]
@@ -107,7 +107,7 @@ Expected: FAIL because the manifest and executable do not exist.
 }
 ```
 
-`bin/vedio-factory` must resolve `../src/cli.mjs`, pass `process.argv.slice(2)`, and set `process.exitCode` from `main` without invoking a shell.
+`bin/video-factory` must resolve `../src/cli.mjs`, pass `process.argv.slice(2)`, and set `process.exitCode` from `main` without invoking a shell.
 
 - [ ] **Step 4: Run the distribution test and full test command**
 
@@ -119,7 +119,7 @@ Expected: PASS with zero dependencies installed.
 
 ```bash
 git add .codex-plugin .agents package.json bin src/cli.mjs tests/distribution.test.mjs
-git commit -m "build: scaffold vedio factory distribution"
+git commit -m "build: scaffold video factory distribution"
 ```
 
 ### Task 2: Publish closed schemas and validate their supported keyword set
@@ -538,12 +538,12 @@ git commit -m "feat: orchestrate approved recoverable video runs"
 ### Task 10: Add six narrow Skills and prevent ownership leakage
 
 **Files:**
-- Create: `skills/codex-vedio-factory-use/SKILL.md`
-- Create: `skills/codex-vedio-factory-plan/SKILL.md`
-- Create: `skills/codex-vedio-factory-run/SKILL.md`
-- Create: `skills/codex-vedio-factory-judge/SKILL.md`
-- Create: `skills/codex-vedio-factory-recover/SKILL.md`
-- Create: `skills/codex-vedio-factory-inspect/SKILL.md`
+- Create: `skills/codex-video-factory-use/SKILL.md`
+- Create: `skills/codex-video-factory-plan/SKILL.md`
+- Create: `skills/codex-video-factory-run/SKILL.md`
+- Create: `skills/codex-video-factory-judge/SKILL.md`
+- Create: `skills/codex-video-factory-recover/SKILL.md`
+- Create: `skills/codex-video-factory-inspect/SKILL.md`
 - Create: `tests/skills.test.mjs`
 
 **Interfaces:**
@@ -557,7 +557,7 @@ test('skills route to CLI and forbid foreign ownership', () => {
   assert.deepEqual(skillNames(), EXPECTED_SKILLS);
   for (const text of skillBodies()) {
     assert.doesNotMatch(text, /OPENAI_API_KEY|Runway|Dreamina API|control Blender/);
-    assert.match(text, /vedio-factory/);
+    assert.match(text, /video-factory/);
   }
 });
 ```
@@ -582,7 +582,7 @@ Expected: all tests PASS.
 
 ```bash
 git add skills tests/skills.test.mjs
-git commit -m "feat: add vedio factory workflow skills"
+git commit -m "feat: add video factory workflow skills"
 ```
 
 ### Task 11: Run real FFmpeg acceptance and publish evidence-backed documentation
@@ -634,9 +634,9 @@ Document Node/FFmpeg prerequisites, plan creation, quote, approval, run, status,
 
 ```bash
 npm test
-node bin/vedio-factory probe
-node bin/vedio-factory validate-plan tests/fixtures/runtime/two-stills-plan.json
-node bin/vedio-factory quote tests/fixtures/runtime/two-stills-plan.json
+node bin/video-factory probe
+node bin/video-factory validate-plan tests/fixtures/runtime/two-stills-plan.json
+node bin/video-factory quote tests/fixtures/runtime/two-stills-plan.json
 git diff --check
 ```
 
@@ -646,7 +646,7 @@ Expected: all commands exit 0, the test summary has zero failures, the distribut
 
 ```bash
 git add README.md README.zh-CN.md LICENSE NOTICE docs tests/runtime-smoke.test.mjs tests/fixtures/runtime tests/distribution.test.mjs
-git commit -m "docs: verify vedio factory 0.1.0"
+git commit -m "docs: verify video factory 0.1.0"
 ```
 
 ## 0.1.0 Completion Gate
