@@ -17,5 +17,11 @@ export function validateVideoPlan(plan) {
   const { width, height, fps } = plan.output ?? {};
   if (![width, height].every((x) => Number.isInteger(x) && x > 0 && x % 2 === 0)) throw new Error('output dimensions must be positive even integers');
   if (!Number.isFinite(fps) || fps <= 0 || fps > 120) throw new Error('invalid output fps');
+  const assets = new Map(plan.assets.map((asset) => [asset.id, asset]));
+  if (assets.size !== plan.assets.length) throw new Error('duplicate asset id');
+  for (const [field, kind] of [['audioAssetId', 'audio'], ['subtitleAssetId', 'subtitle']]) {
+    const id = plan.output?.[field];
+    if (id && assets.get(id)?.kind !== kind) throw new Error(`${field} must reference a ${kind} asset`);
+  }
   return plan;
 }

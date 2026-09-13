@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { assembleVideo } from '../src/assembler.mjs';
 import { outputProfile } from '../src/ffmpeg-compiler.mjs';
+import { renderFinal } from '../src/final-renderer.mjs';
 import { quotePlan } from '../src/approval.mjs';
 import { sha256File } from '../src/hash.mjs';
 import { collectMedia, verifyReceipt } from '../src/media-collector.mjs';
@@ -55,4 +56,53 @@ test('approved orchestrator produces a review-ready rough cut and durable receip
   assert.equal(result.job.state, 'ReviewReady');
   assert.equal(result.receipt.decodeOk, true);
   assert.equal(result.job.segments[0].attempts, 1);
+});
+
+test('real final mastering embeds subtitles and replaces the guide track', { timeout: 30000 }, async () => {
+  const root = mkdtempSync(join(tmpdir(), 'vedio-final-'));
+  const input = join(root, 'input.mp4');
+  const voice = join(root, 'voice.wav');
+  const subtitle = join(root, 'captions.srt');
+  const destination = join(root, 'final.mp4');
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=navy:s=320x180:d=1', '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-shortest', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', input]);
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1:sample_rate=48000', voice]);
+  writeFileSync(subtitle, '1\n00:00:00,000 --> 00:00:00,800\n终版字幕\n');
+  const receipt = await renderFinal({ inputVideo: input, audioPath: voice, subtitlePath: subtitle, profile: outputProfile('final', { width: 320, height: 180 }), destination, durationSeconds: 1 });
+  assert.equal(receipt.decodeOk, true);
+  assert.equal(receipt.hasAudio, true);
+  assert.equal(receipt.width, 320);
+  assert.equal(receipt.height, 180);
+  assert.equal((await verifyReceipt(receipt)).ok, true);
+});
+
+test('approved final orchestrator binds audio and subtitle assets and completes the job', { timeout: 30000 }, async () => {
+  const root = mkdtempSync(join(tmpdir(), 'vedio-approved-final-'));
+  const image = join(root, 'frame.png');
+  const audio = join(root, 'voice.wav');
+  const subtitle = join(root, 'captions.srt');
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=orange:s=64x64', '-frames:v', '1', image]);
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'sine=frequency=330:duration=1:sample_rate=48000', audio]);
+  writeFileSync(subtitle, '1\n00:00:00,000 --> 00:00:00,800\nFactory final\n');
+  const plan = {
+    schemaVersion: '1.0.0', id: 'approved-final-job', mode: 'local_composition', round: 1,
+    assets: [
+      { id: 'A01', path: 'frame.png', sha256: await sha256File(image), kind: 'image', durationTicks: 30 },
+      { id: 'A02', path: 'voice.wav', sha256: await sha256File(audio), kind: 'audio' },
+      { id: 'A03', path: 'captions.srt', sha256: await sha256File(subtitle), kind: 'subtitle' },
+    ],
+    editDecision: { schemaVersion: '1.0.0', id: 'E01', revision: 1, timebase: { numerator: 1, denominator: 30 }, clips: [
+      { id: 'C01', assetId: 'A01', sourceInTicks: 0, sourceOutTicks: 30, timelineInTicks: 0, track: 0, transition: 'cut', gainDb: 0 },
+    ] },
+    output: { aspect: '16:9', width: 320, height: 180, fps: 30, requireAudio: true, audioAssetId: 'A02', subtitleAssetId: 'A03' },
+  };
+  const quote = quotePlan(plan, 'final', 1);
+  const approval = { schemaVersion: '1.0.0', stage: 'final', planHash: quote.planHash, editHash: quote.editHash, round: 1, quoteRevision: 1, acceptedAt: '2026-09-14T00:00:00Z' };
+  const planPath = join(root, 'plan.json');
+  const approvalPath = join(root, 'approval.json');
+  writeFileSync(planPath, JSON.stringify(plan));
+  writeFileSync(approvalPath, JSON.stringify(approval));
+  const result = await runApproved({ planPath, approvalPath, ledgerPath: join(root, 'job.json'), inputRoot: root, workRoot: join(root, 'work'), outputRoot: join(root, 'output'), stage: 'final' });
+  assert.equal(result.job.state, 'Completed');
+  assert.equal(result.receipt.hasAudio, true);
+  assert.equal(result.scores.failedRequired.length, 0);
 });

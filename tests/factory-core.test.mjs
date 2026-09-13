@@ -27,6 +27,7 @@ test('plan identity is stable and approval binds stage, round and both hashes', 
   assert.equal(canonicalHash(plan), canonicalHash(structuredClone(plan)));
   assert.notEqual(canonicalHash(plan), canonicalHash({ ...plan, round: 2 }));
   assert.equal(validateVideoPlan(plan), plan);
+  assert.throws(() => validateVideoPlan({ ...plan, assets: [{ id: 'A1', kind: 'image' }], output: { ...plan.output, audioAssetId: 'A1' } }), /audio asset/);
   const quote = quotePlan(plan, 'rough', 1);
   const approval = { schemaVersion: '1.0.0', stage: 'rough', planHash: quote.planHash, editHash: quote.editHash, round: 1, quoteRevision: 1, acceptedAt: '2026-09-14T00:00:00Z' };
   assert.doesNotThrow(() => verifyApproval(approval, quote));

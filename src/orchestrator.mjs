@@ -4,6 +4,7 @@ import { verifyApproval, quotePlan } from './approval.mjs';
 import { assembleVideo } from './assembler.mjs';
 import { validateEditDecision } from './edit-decision.mjs';
 import { outputProfile, segmentKey } from './ffmpeg-compiler.mjs';
+import { renderFinal } from './final-renderer.mjs';
 import { markSegment, newJob, pendingSegments, readLedger, transition, writeLedger } from './job-ledger.mjs';
 import { evaluateMedia } from './media-evaluator.mjs';
 import { registerAssets } from './paths.mjs';
@@ -50,11 +51,24 @@ export async function runApproved({ planPath, approvalPath, ledgerPath, inputRoo
   writeLedger(ledgerPath, job);
   const segmentPaths = plan.editDecision.clips.map((clip) => job.segments.find((segment) => segment.id === clip.id).receipt.path);
   const artifactPath = join(outputRoot, `${basename(plan.id)}-${stage}-${canonicalHash(plan).slice(0, 12)}.mp4`);
-  const receipt = await assembleVideo(segmentPaths, profile, artifactPath);
-  job = transition(job, 'Verifying', 'assembled artifact');
   const durationSeconds = plan.editDecision.clips.reduce((sum, clip) => sum + (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick, 0);
+  const needsMastering = stage === 'final' && (plan.output.audioAssetId || plan.output.subtitleAssetId);
+  const assemblyPath = needsMastering ? join(workRoot, `assembled-${canonicalHash(plan).slice(0, 12)}.mp4`) : artifactPath;
+  let receipt = await assembleVideo(segmentPaths, profile, assemblyPath);
+  if (needsMastering) {
+    receipt = await renderFinal({
+      inputVideo: assemblyPath,
+      audioPath: plan.output.audioAssetId ? assets[plan.output.audioAssetId].path : null,
+      subtitlePath: plan.output.subtitleAssetId ? assets[plan.output.subtitleAssetId].path : null,
+      profile,
+      destination: artifactPath,
+      durationSeconds,
+    });
+  }
+  job = transition(job, 'Verifying', 'assembled artifact');
   const scores = evaluateMedia({ output: { ...profile, durationSeconds, requireAudio: Boolean(plan.output.requireAudio) } }, receipt, {}, 'unlabeled');
   job = transition(job, scores.failedRequired.length ? 'Failed' : 'ReviewReady', 'media evaluation complete');
+  if (!scores.failedRequired.length && stage === 'final') job = transition(job, 'Completed', 'approved final artifact complete');
   job = { ...job, revision: job.revision + 1, artifact: receipt, scores };
   writeLedger(ledgerPath, job);
   return { job, receipt, scores, quote };

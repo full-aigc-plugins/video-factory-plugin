@@ -2,12 +2,23 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { compileSegment, outputProfile, segmentKey } from '../src/ffmpeg-compiler.mjs';
 import { evaluateMedia } from '../src/media-evaluator.mjs';
+import { compileMaster } from '../src/final-renderer.mjs';
 
 const profile = outputProfile('rough', { aspect: '16:9' });
 
 test('rough and final profiles are deterministic and use even standard dimensions', () => {
   assert.deepEqual(profile, { width: 1280, height: 720, fps: 30, crf: 28, preset: 'veryfast', audioRate: 48000 });
   assert.deepEqual(outputProfile('final', { aspect: '9:16' }), { width: 1080, height: 1920, fps: 30, crf: 20, preset: 'medium', audioRate: 48000 });
+});
+
+test('final mastering adds declared audio and subtitles through bounded argv', () => {
+  const spec = compileMaster({ inputVideo: '/input/rough.mp4', audioPath: '/input/voice.wav', subtitlePath: '/input/captions.srt', profile: outputProfile('final', { aspect: '16:9' }), destination: '/output/final.mp4' });
+  assert.equal(spec.bin, 'ffmpeg');
+  assert.equal(spec.options.shell, false);
+  assert.ok(spec.args.includes('/input/voice.wav'));
+  assert.ok(spec.args.includes('/input/captions.srt'));
+  assert.ok(spec.args.includes('mov_text'));
+  assert.ok(!spec.args.join(' ').includes('http:'));
 });
 
 test('image and clip segments compile to bounded argv without a shell or network protocol', () => {
