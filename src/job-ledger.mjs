@@ -1,0 +1,47 @@
+import { closeSync, fsyncSync, openSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+
+const TRANSITIONS = {
+  AwaitingApproval: ['Running', 'Blocked'],
+  Running: ['Partial', 'Collecting', 'Blocked', 'Failed'],
+  Partial: ['Running', 'Failed'],
+  Blocked: ['Running', 'Failed'],
+  Collecting: ['Verifying', 'Failed'],
+  Verifying: ['ReviewReady', 'Failed'],
+  ReviewReady: ['Completed', 'ReworkReady'],
+  ReworkReady: [], Completed: [], Failed: [],
+};
+
+export function newJob({ id, planHash, stage, shotIds }) {
+  return { schemaVersion: '1.0.0', id, revision: 1, state: 'AwaitingApproval', planHash, stage, segments: shotIds.map((id) => ({ id, state: 'Pending', attempts: 0 })), history: [] };
+}
+
+export function transition(job, next, note = '') {
+  if (!(TRANSITIONS[job.state] ?? []).includes(next)) throw new Error(`illegal transition: ${job.state} -> ${next}`);
+  return { ...job, revision: job.revision + 1, state: next, history: [...job.history, { from: job.state, to: next, note }] };
+}
+
+export function markSegment(job, id, receipt) {
+  return { ...job, revision: job.revision + 1, segments: job.segments.map((segment) => segment.id === id ? { ...segment, state: 'Completed', attempts: segment.attempts + 1, receipt } : segment) };
+}
+
+export const pendingSegments = (job) => job.segments.filter((segment) => segment.state === 'Pending').map((segment) => segment.id);
+
+const rejectSecrets = (value) => {
+  const text = JSON.stringify(value);
+  if (/"(?:api[_-]?key|token|password|secret)"\s*:/i.test(text)) throw new Error('credential field is not allowed');
+};
+
+export function writeLedger(path, job) {
+  rejectSecrets(job);
+  const temp = join(dirname(path), `.${job.id}.${process.pid}.tmp`);
+  const fd = openSync(temp, 'w', 0o600);
+  try { writeFileSync(fd, `${JSON.stringify(job, null, 2)}\n`); fsyncSync(fd); } finally { closeSync(fd); }
+  renameSync(temp, path);
+}
+
+export function readLedger(path) {
+  const job = JSON.parse(readFileSync(path, 'utf8'));
+  rejectSecrets(job);
+  return job;
+}
