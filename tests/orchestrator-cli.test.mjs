@@ -47,7 +47,11 @@ test('recovery summary returns only pending segment ids and never retries failur
   ] });
   assert.deepEqual(summary.pending, ['S02']);
   assert.deepEqual(summary.failed, ['S03']);
-  assert.equal(summary.nextAction, 'resume_pending');
+  assert.equal(summary.nextAction, 'new_round_required');
+  const interrupted = recoverySummary({ state: 'Running', segments: [
+    { id: 'S01', state: 'Completed' }, { id: 'S02', state: 'Pending' },
+  ] });
+  assert.equal(interrupted.nextAction, 'resume_pending');
 });
 
 test('CLI evaluation derives expected duration from the edit rather than an undeclared output field', async () => {

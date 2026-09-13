@@ -18,7 +18,7 @@ const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 export function recoverySummary(job) {
   const pending = (job.segments ?? []).filter((item) => item.state === 'Pending').map((item) => item.id);
   const failed = (job.segments ?? []).filter((item) => item.state === 'Failed').map((item) => item.id);
-  return { state: job.state, pending, failed, nextAction: pending.length ? 'resume_pending' : failed.length ? 'new_round_required' : 'continue_state_machine' };
+  return { state: job.state, pending, failed, nextAction: failed.length ? 'new_round_required' : pending.length ? 'resume_pending' : 'continue_state_machine' };
 }
 
 export async function runApproved({ planPath, approvalPath, ledgerPath, inputRoot, workRoot, outputRoot, stage }) {
@@ -40,6 +40,7 @@ export async function runApproved({ planPath, approvalPath, ledgerPath, inputRoo
   mkdirSync(outputRoot, { recursive: true });
   let job = existsSync(ledgerPath) ? readLedger(ledgerPath) : newJob({ id: plan.id, planHash: quote.planHash, stage, shotIds: plan.editDecision.clips.map((clip) => clip.id) });
   if (job.planHash !== quote.planHash || job.stage !== stage) throw new Error('ledger does not match approved plan');
+  if (job.segments.some((segment) => segment.state === 'Failed')) throw new Error('failed segment requires a new round');
   if (job.state === 'AwaitingApproval' || job.state === 'Partial' || job.state === 'Blocked') job = transition(job, 'Running', 'approved execution');
   writeLedger(ledgerPath, job);
   const profile = outputProfile(stage, plan.output);

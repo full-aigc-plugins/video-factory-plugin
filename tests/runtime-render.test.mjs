@@ -208,6 +208,39 @@ test('a new edit revision reuses unchanged shots and rerenders only the changed 
   assert.equal(result.job.segments[1].attempts, 1);
 });
 
+test('an interrupted Running ledger resumes only pending work with the same idempotency keys', { timeout: 30000 }, async () => {
+  const root = mkdtempSync(join(tmpdir(), 'video-interrupted-'));
+  const image = join(root, 'frame.png');
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=purple:s=64x64', '-frames:v', '1', image]);
+  const plan = {
+    schemaVersion: '1.0.0', id: 'interrupted-job', mode: 'local_composition', round: 1,
+    assets: [{ id: 'A01', path: 'frame.png', sha256: await sha256File(image), kind: 'image', durationTicks: 60 }],
+    editDecision: { schemaVersion: '1.0.0', id: 'E01', revision: 1, timebase: { numerator: 1, denominator: 30 }, clips: [
+      { id: 'C01', assetId: 'A01', sourceInTicks: 0, sourceOutTicks: 30, timelineInTicks: 0, track: 0, transition: 'cut', gainDb: 0 },
+      { id: 'C02', assetId: 'A01', sourceInTicks: 30, sourceOutTicks: 60, timelineInTicks: 30, track: 0, transition: 'cut', gainDb: 0 },
+    ] },
+    output: { aspect: '16:9', width: 320, height: 180, fps: 30, requireAudio: false },
+  };
+  const quote = quotePlan(plan, 'rough', 1);
+  const approval = { schemaVersion: '1.0.0', stage: 'rough', planHash: quote.planHash, editHash: quote.editHash, round: 1, quoteRevision: 1, acceptedAt: '2026-09-14T00:00:00Z' };
+  const planPath = join(root, 'plan.json');
+  const approvalPath = join(root, 'approval.json');
+  const ledgerPath = join(root, 'job.json');
+  writeFileSync(planPath, JSON.stringify(plan));
+  writeFileSync(approvalPath, JSON.stringify(approval));
+  const request = { planPath, approvalPath, ledgerPath, inputRoot: root, workRoot: join(root, 'work'), outputRoot: join(root, 'output'), stage: 'rough' };
+  const first = await runApproved(request);
+  const interrupted = structuredClone(first.job);
+  interrupted.state = 'Running';
+  interrupted.segments[1] = { id: 'C02', state: 'Pending', attempts: 0 };
+  writeFileSync(ledgerPath, JSON.stringify(interrupted));
+  const resumed = await runApproved(request);
+  assert.equal(resumed.job.state, 'ReviewReady');
+  assert.equal(resumed.job.segments[0].attempts, 1);
+  assert.equal(resumed.job.segments[1].attempts, 0);
+  assert.equal(resumed.job.segments[1].reused, true);
+});
+
 test('real final profiles render both portrait and square deliverables', { timeout: 30000 }, async () => {
   const root = mkdtempSync(join(tmpdir(), 'video-aspects-'));
   const image = join(root, 'frame.png');
