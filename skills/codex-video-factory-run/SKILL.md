@@ -1,5 +1,5 @@
 ---
-name: codex-vedio-factory-run
+name: codex-video-factory-run
 description: Use when a validated VideoPlan has an explicit matching rough-cut or final-cut approval and should be rendered, collected, and recorded without automatic retry.
 ---
 

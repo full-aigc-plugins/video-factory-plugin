@@ -10,7 +10,7 @@ import { quotePlan, verifyApproval } from '../src/approval.mjs';
 import { markSegment, newJob, pendingSegments, readLedger, transition, writeLedger } from '../src/job-ledger.mjs';
 
 test('asset registration binds regular local files and rejects URL or symlink escape', async () => {
-  const root = mkdtempSync(join(tmpdir(), 'vedio-assets-'));
+  const root = mkdtempSync(join(tmpdir(), 'video-assets-'));
   writeFileSync(join(root, 'clip.bin'), 'clip-one');
   const outside = join(root, '..', `outside-${Date.now()}`);
   writeFileSync(outside, 'outside');
@@ -35,7 +35,7 @@ test('plan identity is stable and approval binds stage, round and both hashes', 
 });
 
 test('atomic ledger recovery never returns completed segments as pending', () => {
-  const root = mkdtempSync(join(tmpdir(), 'vedio-ledger-'));
+  const root = mkdtempSync(join(tmpdir(), 'video-ledger-'));
   const file = join(root, 'job.json');
   let job = newJob({ id: 'J1', planHash: 'a'.repeat(64), stage: 'rough', shotIds: ['S01', 'S02'] });
   job = transition(job, 'Running', 'approved');

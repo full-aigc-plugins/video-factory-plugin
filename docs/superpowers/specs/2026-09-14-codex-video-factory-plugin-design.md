@@ -1,14 +1,14 @@
-# Codex Vedio Factory Plugin 设计规格
+# Codex Video Factory Plugin 设计规格
 
 > 状态：设计已确认，进入 0.1.0 实施。
 >
 > 日期：2026-09-14。
 >
-> 仓库与插件标识按用户指定保留 `vedio` 拼写，不自动更名为 `video`。
+> 仓库、插件、CLI 与 Skill 统一使用规范的 `video` 拼写。
 
 ## 1. 产品定义
 
-`codex-vedio-factory-plugin` 是 Codex 驱动的视频生成编排、自动剪辑、视频合成与成片质量工厂。
+`codex-video-factory-plugin` 是 Codex 驱动的视频生成编排、自动剪辑、视频合成与成片质量工厂。
 它接收剪辑目标和授权素材，通过拉片生成证据，由 Codex 形成 EditDecision，再生成粗剪、
 同步审阅版、终版和媒体回执。
 
@@ -32,7 +32,7 @@
 | 图片生成与图片回执 | `codex-image-factory-plugin` | 消费其已批准图片产物 |
 | Blender 场景、相机、动画和渲染 | `codex-blender-plugin` | 消费其图片序列或动画视频 |
 | 剧本、导演方案和分镜 | 专业创作插件 | 作为 Video Plan 的上游输入 |
-| 视频制作、媒体核验和恢复 | `codex-vedio-factory-plugin` | 本插件唯一核心职责 |
+| 视频制作、媒体核验和恢复 | `codex-video-factory-plugin` | 本插件唯一核心职责 |
 | 外部视频供应商 | 独立供应商插件 | 首版不接入，也不由本插件持有凭据 |
 
 本插件没有图形工作台、项目数据库、通用聊天入口、Blender 控制器或图片生成器。
@@ -53,7 +53,7 @@
 
 ```mermaid
 flowchart TB
-    U[Codex / PartMe Studio] --> ROUTER[codex-vedio-factory-use]
+    U[Codex / PartMe Studio] --> ROUTER[codex-video-factory-use]
     ROUTER --> PLAN[Plan Compiler]
     PLAN --> VALIDATE[Closed Schema + Policy Validator]
     VALIDATE --> QUOTE[Quote / Resource Estimate]
@@ -166,11 +166,11 @@ work/<job_id>/round-<n>/
 
 首版保持七个职责清晰的 Skill：
 
-1. `codex-vedio-factory-use`：统一入口，根据目标和台账状态路由。
-2. `codex-vedio-factory-plan`：把素材、拉片证据和剪辑目标转成可校验 EditDecision 与 Video Plan。
-3. `codex-vedio-factory-run`：粗剪/终版报价、双阶段批准、分段渲染、装配和产物采集。
-4. `codex-vedio-factory-judge`：媒体硬门禁、语义建议和人工标签。
-5. `codex-vedio-factory-recover`：读取台账，给出唯一合法下一步，不自动重试。
+1. `codex-video-factory-use`：统一入口，根据目标和台账状态路由。
+2. `codex-video-factory-plan`：把素材、拉片证据和剪辑目标转成可校验 EditDecision 与 Video Plan。
+3. `codex-video-factory-run`：粗剪/终版报价、双阶段批准、分段渲染、装配和产物采集。
+4. `codex-video-factory-judge`：媒体硬门禁、语义建议和人工标签。
+5. `codex-video-factory-recover`：读取台账，给出唯一合法下一步，不自动重试。
 6. `video-shots`：原样 ReelBench 拉片、镜头分析和报告能力。
 7. `video-sync`：原样 ReelBench 同步镜头信息审阅视频能力。
 
@@ -179,15 +179,15 @@ Skill 只描述何时使用、输入输出、批准点和失败边界。确定�
 ## 9. CLI 合约
 
 ```text
-bin/vedio-factory probe
-bin/vedio-factory validate-plan <video-plan.json>
-bin/vedio-factory quote <video-plan.json>
-bin/vedio-factory run <video-plan.json> --approval <approval.json>
-bin/vedio-factory status <job-ledger.json>
-bin/vedio-factory verify <artifact-receipt.json>
-bin/vedio-factory evaluate <video-plan.json> <job-ledger.json>
-bin/vedio-factory inspect <video-file> --purpose <reference|quality|rhythm>
-bin/vedio-factory recover <job-ledger.json>
+bin/video-factory probe
+bin/video-factory validate-plan <video-plan.json>
+bin/video-factory quote <video-plan.json>
+bin/video-factory run <video-plan.json> --approval <approval.json>
+bin/video-factory status <job-ledger.json>
+bin/video-factory verify <artifact-receipt.json>
+bin/video-factory evaluate <video-plan.json> <job-ledger.json>
+bin/video-factory inspect <video-file> --purpose <reference|quality|rhythm>
+bin/video-factory recover <job-ledger.json>
 ```
 
 首版不提供任意 FFmpeg 参数透传。每个命令使用结构化输入和封闭枚举，输出 JSON 到 stdout，

@@ -13,7 +13,7 @@ const capture = () => {
 };
 
 test('CLI quote emits a zero-remote-call rough estimate', async () => {
-  const root = mkdtempSync(join(tmpdir(), 'vedio-cli-'));
+  const root = mkdtempSync(join(tmpdir(), 'video-cli-'));
   const planPath = join(root, 'plan.json');
   writeFileSync(planPath, JSON.stringify({ id: 'P1', round: 1, mode: 'local_composition', editDecision: { id: 'E1', clips: [] }, assets: [{ id: 'A1' }], output: { width: 1280, height: 720, fps: 30 } }));
   const out = capture();
@@ -24,7 +24,7 @@ test('CLI quote emits a zero-remote-call rough estimate', async () => {
 });
 
 test('CLI rejects unavailable native generation before execution', async () => {
-  const root = mkdtempSync(join(tmpdir(), 'vedio-cli-'));
+  const root = mkdtempSync(join(tmpdir(), 'video-cli-'));
   const path = join(root, 'plan.json');
   writeFileSync(path, JSON.stringify({ id: 'P1', round: 1, mode: 'codex_native_generation', editDecision: {}, assets: [{}], output: { width: 1280, height: 720, fps: 30 } }));
   const out = capture();

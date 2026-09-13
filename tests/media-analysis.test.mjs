@@ -22,7 +22,7 @@ test('missing optional evidence is SKIPPED rather than reported as passed', () =
 });
 
 test('real FFmpeg detector reports a fully black clip', { timeout: 30000 }, () => {
-  const root = mkdtempSync(join(tmpdir(), 'vedio-analysis-'));
+  const root = mkdtempSync(join(tmpdir(), 'video-analysis-'));
   const video = join(root, 'black.mp4');
   execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=black:s=160x90:d=1', '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-shortest', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', video]);
   const result = analyzeMedia(video, { durationSeconds: 1, hasAudio: true });

@@ -10,7 +10,7 @@ import { probeCapabilities } from './probe.mjs';
 import { readLedger } from './job-ledger.mjs';
 import { assertReviewInput, reviewSyncCommand, runAnalyzeSeed } from './integrations/reelbench-adapter.mjs';
 
-const HELP = `vedio-factory — automatic editing and verified video composition
+const HELP = `video-factory — automatic editing and verified video composition
 
 Commands:
   probe
@@ -62,7 +62,7 @@ export async function main(argv, io = { stdout: process.stdout, stderr: process.
     if (command === 'run') {
       const planPath = resolve(argv[1]);
       const root = dirname(planPath);
-      const result = await runApproved({ planPath, approvalPath: resolve(String(flag(argv, '--approval'))), ledgerPath: resolve(String(flag(argv, '--ledger', `${planPath}.job.json`))), inputRoot: resolve(String(flag(argv, '--input-root', root))), workRoot: resolve(String(flag(argv, '--work-root', `${root}/.vedio-work`))), outputRoot: resolve(String(flag(argv, '--output-root', `${root}/output`))), stage: String(flag(argv, '--stage', 'rough')) });
+      const result = await runApproved({ planPath, approvalPath: resolve(String(flag(argv, '--approval'))), ledgerPath: resolve(String(flag(argv, '--ledger', `${planPath}.job.json`))), inputRoot: resolve(String(flag(argv, '--input-root', root))), workRoot: resolve(String(flag(argv, '--work-root', `${root}/.video-work`))), outputRoot: resolve(String(flag(argv, '--output-root', `${root}/output`))), stage: String(flag(argv, '--stage', 'rough')) });
       io.stdout.write(`${JSON.stringify(result, null, 2)}\n`); return 0;
     }
     if (command === 'status' || command === 'recover') {

@@ -15,7 +15,7 @@ import { renderSegment } from '../src/segment-renderer.mjs';
 import { runApproved } from '../src/orchestrator.mjs';
 
 test('real FFmpeg renders resumable image segments and a verified rough cut', { timeout: 30000 }, async () => {
-  const root = mkdtempSync(join(tmpdir(), 'vedio-runtime-'));
+  const root = mkdtempSync(join(tmpdir(), 'video-runtime-'));
   const red = join(root, 'red.png');
   const blue = join(root, 'blue.png');
   execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=red:s=64x64', '-frames:v', '1', red]);
@@ -34,7 +34,7 @@ test('real FFmpeg renders resumable image segments and a verified rough cut', { 
 });
 
 test('real FFmpeg assembles two normalized segments with a dissolve', { timeout: 30000 }, async () => {
-  const root = mkdtempSync(join(tmpdir(), 'vedio-dissolve-'));
+  const root = mkdtempSync(join(tmpdir(), 'video-dissolve-'));
   const firstPath = join(root, 'first.mp4');
   const secondPath = join(root, 'second.mp4');
   for (const [path, color] of [[firstPath, 'purple'], [secondPath, 'yellow']]) {
@@ -47,7 +47,7 @@ test('real FFmpeg assembles two normalized segments with a dissolve', { timeout:
 });
 
 test('approved orchestrator produces a review-ready rough cut and durable receipts', { timeout: 30000 }, async () => {
-  const root = mkdtempSync(join(tmpdir(), 'vedio-approved-'));
+  const root = mkdtempSync(join(tmpdir(), 'video-approved-'));
   const image = join(root, 'green.png');
   execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=green:s=64x64', '-frames:v', '1', image]);
   const assetHash = await sha256File(image);
@@ -72,7 +72,7 @@ test('approved orchestrator produces a review-ready rough cut and durable receip
 });
 
 test('real final mastering embeds subtitles and replaces the guide track', { timeout: 30000 }, async () => {
-  const root = mkdtempSync(join(tmpdir(), 'vedio-final-'));
+  const root = mkdtempSync(join(tmpdir(), 'video-final-'));
   const input = join(root, 'input.mp4');
   const voice = join(root, 'voice.wav');
   const subtitle = join(root, 'captions.srt');
@@ -89,7 +89,7 @@ test('real final mastering embeds subtitles and replaces the guide track', { tim
 });
 
 test('approved final orchestrator binds audio and subtitle assets and completes the job', { timeout: 30000 }, async () => {
-  const root = mkdtempSync(join(tmpdir(), 'vedio-approved-final-'));
+  const root = mkdtempSync(join(tmpdir(), 'video-approved-final-'));
   const image = join(root, 'frame.png');
   const audio = join(root, 'voice.wav');
   const subtitle = join(root, 'captions.srt');

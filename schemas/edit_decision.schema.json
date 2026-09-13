@@ -1,6 +1,6 @@
 {
   "$schema":"https://json-schema.org/draft/2020-12/schema",
-  "$id":"https://partme.ai/schemas/vedio/edit-decision-1.0.0.json",
+  "$id":"https://partme.ai/schemas/video/edit-decision-1.0.0.json",
   "title":"EditDecision","type":"object","additionalProperties":false,
   "required":["schemaVersion","id","revision","timebase","clips"],
   "properties":{
