@@ -7,7 +7,7 @@ import { sha256File } from '../src/hash.mjs';
 import { findMissingAssetRequirements, resolveGrantedFile, registerAssets, writeAssetRequirements } from '../src/paths.mjs';
 import { canonicalHash, validateVideoPlan } from '../src/plan.mjs';
 import { quotePlan, verifyApproval } from '../src/approval.mjs';
-import { failSegment, markSegment, newJob, pendingSegments, readLedger, transition, writeLedger } from '../src/job-ledger.mjs';
+import { failSegment, markSegment, newJob, pendingSegments, readLedger, recordHumanDecision, transition, writeLedger } from '../src/job-ledger.mjs';
 
 test('asset registration binds regular local files and rejects URL or symlink escape', async () => {
   const root = mkdtempSync(join(tmpdir(), 'video-assets-'));
@@ -100,4 +100,15 @@ test('reused segment receipts do not count as new render attempts', () => {
   job = markSegment(job, 'S01', { path: 'S01.mp4', sha256: 'b'.repeat(64) }, { attempts: 0, reused: true });
   assert.equal(job.segments[0].attempts, 0);
   assert.equal(job.segments[0].reused, true);
+});
+
+test('only an explicit human review can complete or reject a review-ready artifact', () => {
+  const ready = { ...newJob({ id: 'J4', planHash: 'a'.repeat(64), stage: 'final', shotIds: [] }), state: 'ReviewReady', scores: { decision: 'review', failedRequired: [], gates: [], humanLabel: 'unlabeled' } };
+  const approved = recordHumanDecision(ready, 'approved', 'final playback accepted');
+  assert.equal(approved.state, 'Completed');
+  assert.equal(approved.scores.humanLabel, 'approved');
+  const rejected = recordHumanDecision(ready, 'rejected', 'subtitle needs revision');
+  assert.equal(rejected.state, 'ReworkReady');
+  assert.equal(rejected.scores.decision, 'fail');
+  assert.throws(() => recordHumanDecision({ ...ready, state: 'Running' }, 'approved'), /ReviewReady/);
 });

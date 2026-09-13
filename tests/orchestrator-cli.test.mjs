@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -64,4 +64,14 @@ test('CLI evaluation derives expected duration from the edit rather than an unde
   const scores = JSON.parse(out.read().stdout);
   assert.deepEqual(scores.failedRequired, []);
   assert.equal(scores.gates.find((gate) => gate.id === 'duration').status, 'PASS');
+});
+
+test('CLI accept is the only path from ReviewReady to Completed', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'video-accept-'));
+  const ledgerPath = join(root, 'job.json');
+  writeFileSync(ledgerPath, JSON.stringify({ schemaVersion: '1.0.0', id: 'J1', revision: 3, state: 'ReviewReady', planHash: 'a'.repeat(64), stage: 'final', segments: [], history: [], scores: { schemaVersion: '1.0.0', decision: 'review', failedRequired: [], gates: [], humanLabel: 'unlabeled' } }));
+  const out = capture();
+  assert.equal(await main(['accept', ledgerPath, '--decision', 'approved', '--note', 'played and accepted'], out.io), 0);
+  assert.equal(JSON.parse(out.read().stdout).state, 'Completed');
+  assert.equal(JSON.parse(readFileSync(ledgerPath, 'utf8')).review.decision, 'approved');
 });

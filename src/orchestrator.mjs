@@ -98,7 +98,6 @@ export async function runApproved({ planPath, approvalPath, ledgerPath, inputRoo
   Object.assign(evidence, analyzeEditPolicy(plan.editDecision));
   const scores = evaluateMedia({ output: { ...profile, durationSeconds, requireAudio: Boolean(plan.output.requireAudio) } }, receipt, evidence, 'unlabeled');
   job = transition(job, scores.failedRequired.length ? 'Failed' : 'ReviewReady', 'media evaluation complete');
-  if (!scores.failedRequired.length && stage === 'final') job = transition(job, 'Completed', 'approved final artifact complete');
   job = { ...job, revision: job.revision + 1, artifact: receipt, scores };
   writeLedger(ledgerPath, job);
   return { job, receipt, scores, quote };

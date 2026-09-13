@@ -40,6 +40,24 @@ export function failSegment(job, id, error) {
 
 export const pendingSegments = (job) => job.segments.filter((segment) => segment.state === 'Pending').map((segment) => segment.id);
 
+export function recordHumanDecision(job, decision, note = '') {
+  if (job.state !== 'ReviewReady') throw new Error('human decision requires ReviewReady state');
+  if (!['approved', 'rejected'].includes(decision)) throw new Error('human decision must be approved or rejected');
+  const target = decision === 'approved' ? 'Completed' : 'ReworkReady';
+  const transitioned = transition(job, target, `human ${decision}`);
+  const advisoryFailed = (job.scores?.gates ?? []).some((gate) => gate.status === 'FAIL' && !(job.scores?.failedRequired ?? []).includes(gate.id));
+  return {
+    ...transitioned,
+    revision: transitioned.revision + 1,
+    review: { decision, note: String(note).slice(0, 2000) },
+    scores: job.scores ? {
+      ...job.scores,
+      humanLabel: decision,
+      decision: decision === 'rejected' ? 'fail' : advisoryFailed ? 'review' : 'pass',
+    } : undefined,
+  };
+}
+
 const rejectSecrets = (value) => {
   const text = JSON.stringify(value);
   if (/"(?:api[_-]?key|token|password|secret)"\s*:/i.test(text)) throw new Error('credential field is not allowed');

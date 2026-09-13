@@ -105,7 +105,7 @@ test('real final mastering embeds subtitles and replaces the guide track', { tim
   assert.equal((await verifyReceipt(receipt)).ok, true);
 });
 
-test('approved final orchestrator binds audio and subtitle assets and completes the job', { timeout: 30000 }, async () => {
+test('approved final orchestrator binds audio and subtitle assets then awaits explicit review', { timeout: 30000 }, async () => {
   const root = mkdtempSync(join(tmpdir(), 'video-approved-final-'));
   const image = join(root, 'frame.png');
   const audio = join(root, 'voice.wav');
@@ -142,7 +142,7 @@ test('approved final orchestrator binds audio and subtitle assets and completes 
   writeFileSync(planPath, JSON.stringify(plan));
   writeFileSync(approvalPath, JSON.stringify(approval));
   const result = await runApproved({ planPath, approvalPath, ledgerPath: join(root, 'job.json'), inputRoot: root, workRoot: join(root, 'work'), outputRoot: join(root, 'output'), stage: 'final' });
-  assert.equal(result.job.state, 'Completed');
+  assert.equal(result.job.state, 'ReviewReady');
   assert.equal(result.receipt.hasAudio, true);
   assert.equal(result.scores.failedRequired.length, 0);
   assert.equal(result.scores.gates.find((gate) => gate.id === 'subtitleTiming').status, 'PASS');

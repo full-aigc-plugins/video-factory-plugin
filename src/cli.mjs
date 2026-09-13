@@ -6,7 +6,7 @@ import { evaluateMedia } from './media-evaluator.mjs';
 import { recoverySummary, runApproved } from './orchestrator.mjs';
 import { canonicalHash, validateVideoPlan } from './plan.mjs';
 import { probeCapabilities } from './probe.mjs';
-import { readLedger } from './job-ledger.mjs';
+import { readLedger, recordHumanDecision, writeLedger } from './job-ledger.mjs';
 import { effectiveAssemblyDuration, outputProfile } from './ffmpeg-compiler.mjs';
 import { assertReviewInput, runAnalyzeEvidence, runReviewSync } from './integrations/reelbench-adapter.mjs';
 
@@ -21,6 +21,7 @@ Commands:
   review-sync <rough-cut> <shots.json>
   status <ledger.json>
   evaluate <artifact> <plan.json>
+  accept <ledger.json> --decision approved|rejected [--note text]
   recover <ledger.json>
 `;
 
@@ -67,6 +68,12 @@ export async function main(argv, io = { stdout: process.stdout, stderr: process.
     if (command === 'status' || command === 'recover') {
       const job = readLedger(argv[1]);
       io.stdout.write(`${JSON.stringify(command === 'status' ? job : recoverySummary(job), null, 2)}\n`); return 0;
+    }
+    if (command === 'accept') {
+      const ledgerPath = resolve(argv[1]);
+      const updated = recordHumanDecision(readLedger(ledgerPath), String(flag(argv, '--decision')), String(flag(argv, '--note', '')));
+      writeLedger(ledgerPath, updated);
+      io.stdout.write(`${JSON.stringify(updated, null, 2)}\n`); return 0;
     }
     if (command === 'evaluate') {
       const plan = validateVideoPlan(readJson(argv[2]));
