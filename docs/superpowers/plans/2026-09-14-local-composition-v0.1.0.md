@@ -1,8 +1,8 @@
-# Codex Vedio Factory Local Composition 0.1.0 Implementation Plan
+# Codex Vedio Factory Automatic Editing 0.1.0 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a distributable Codex plugin that converts an explicitly approved, closed video plan and local authorized assets into recoverable H.264/AAC MP4 artifacts with independently verified media receipts.
+**Goal:** Build a distributable Codex plugin that uses original ReelBench Skills for shot analysis and synchronized review, converts Codex-authored EditDecision plans into approved rough and final cuts, and produces independently verified H.264/AAC MP4 receipts.
 
 **Architecture:** Node.js standard-library modules validate closed contracts, hash local inputs, maintain an atomic job ledger, compile bounded FFmpeg argv, render content-addressed shot segments, assemble a final video, and verify the file with ffprobe and full decode. Codex supplies plans and semantic review; deterministic code owns measurements, state transitions, approvals, and hard gates.
 
@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Keep the user-specified `codex-vedio-factory-plugin` and `vedio-factory` spelling everywhere.
-- Version 0.1.0 implements only `local_composition`; it must reject `codex_native_generation`.
+- Version 0.1.0 implements `local_composition` automatic editing and must reject `codex_native_generation`.
 - Do not add PartMe Studio UI, Blender control, image generation, external video APIs, API keys, automatic retries, network inputs, or arbitrary FFmpeg argument passthrough.
 - Require Node.js 18+, `ffmpeg`, and `ffprobe`; Chrome and local TTS are not required in 0.1.0.
 - Use argv arrays with `shell: false`; canonicalize paths and enforce explicit input/work/output roots.
@@ -21,7 +21,7 @@
 - Keep `PASS`, `FAIL`, `SKIPPED`, and `NOT_RUN` distinct; required gates may not be skipped.
 - Preserve every prior accepted output; write JSON and media outputs atomically.
 - Use TDD for every behavior change and commit after every task.
-- ReelBench source import, `video-shots`, `video-sync`, and native-video adapters are excluded from this 0.1.0 plan and require their own later plans.
+- ReelBench `video-shots` and `video-sync` are active, byte-preserved 0.1.0 Skills; native-video adapters remain out of scope.
 
 ## Target File Map
 

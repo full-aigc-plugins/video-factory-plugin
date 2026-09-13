@@ -1,6 +1,6 @@
 # Codex Vedio Factory Plugin 设计规格
 
-> 状态：设计已批准，等待用户复核与实施计划。
+> 状态：设计已确认，进入 0.1.0 实施。
 >
 > 日期：2026-09-14。
 >
@@ -8,8 +8,9 @@
 
 ## 1. 产品定义
 
-`codex-vedio-factory-plugin` 是 Codex 驱动的、可批准、可恢复、可核验的视频生产工厂。
-它接收已经明确的视频目标、镜头计划和授权素材，生成最终视频及媒体回执。
+`codex-vedio-factory-plugin` 是 Codex 驱动的视频生成编排、自动剪辑、视频合成与成片质量工厂。
+它接收剪辑目标和授权素材，通过拉片生成证据，由 Codex 形成 EditDecision，再生成粗剪、
+同步审阅版、终版和媒体回执。
 
 首版交付模式 B：Codex 负责编排与语义判断，本机 FFmpeg/ffprobe 负责确定性的视频制作、
 测量和核验。未来模式 A 只在 Codex 真正暴露原生视频生成工具后启用；没有可验证能力时
@@ -146,7 +147,7 @@ work/<job_id>/round-<n>/
 
 采用策略：
 
-- 原始快照放入 `vendor/upstream`，保持字节和提交身份，不进入活跃 Skill；
+- `video-shots` 与 `video-sync` 作为活跃 Skill 原样集成，27 个文件保持字节和提交身份；
 - 保留 LICENSE、NOTICE、来源、固定 revision 和修改说明；
 - `video-shots` 的切点、时长、运动曲线、联系表和质量门用于参考视频分析与成片核验；
 - `video-sync` 的同步镜头面板用于生成内部审阅版，不作为客户最终视频默认样式；
@@ -163,14 +164,15 @@ work/<job_id>/round-<n>/
 
 ## 8. 活跃 Skills
 
-首版保持六个职责清晰的 Skill：
+首版保持七个职责清晰的 Skill：
 
 1. `codex-vedio-factory-use`：统一入口，根据目标和台账状态路由。
-2. `codex-vedio-factory-plan`：把已批准创意输入转成可校验 Video Plan。
-3. `codex-vedio-factory-run`：报价、批准、分段渲染、最终装配和产物采集。
+2. `codex-vedio-factory-plan`：把素材、拉片证据和剪辑目标转成可校验 EditDecision 与 Video Plan。
+3. `codex-vedio-factory-run`：粗剪/终版报价、双阶段批准、分段渲染、装配和产物采集。
 4. `codex-vedio-factory-judge`：媒体硬门禁、语义建议和人工标签。
 5. `codex-vedio-factory-recover`：读取台账，给出唯一合法下一步，不自动重试。
-6. `codex-vedio-factory-inspect`：参考视频拉片、成片反向分析和内部同步审阅版。
+6. `video-shots`：原样 ReelBench 拉片、镜头分析和报告能力。
+7. `video-sync`：原样 ReelBench 同步镜头信息审阅视频能力。
 
 Skill 只描述何时使用、输入输出、批准点和失败边界。确定性逻辑全部落在可测试脚本中。
 
@@ -313,14 +315,10 @@ stateDiagram-v2
 
 ## 16. 分阶段交付
 
-### 0.1.0 — 本地视频生产闭环
+### 0.1.0 — 自动剪辑与本地视频生产闭环
 
-模式 B、Video Plan、批准、分段渲染、最终装配、回执、硬门禁、恢复和六个活跃 Skill。
-
-### 0.1.1 — 拉片与审阅证据
-
-引入经归属治理的 ReelBench 方法：参考视频拉片、运动曲线、联系表、节奏分析和内部同步
-审阅视频；不改变主生产链。
+原样 ReelBench 拉片与同步审阅、EditDecision、粗剪/终版双阶段批准、分段渲染、最终装配、
+回执、硬门禁、恢复和七个活跃 Skill。
 
 ### 0.2.0 — Codex 原生视频适配器
 
