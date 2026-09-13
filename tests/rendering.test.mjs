@@ -82,9 +82,26 @@ test('segment identity changes with source hash or edit parameters', () => {
 
 test('required media failure outranks advisory findings and human approval', () => {
   const plan = { output: { width: 1280, height: 720, fps: 30, durationSeconds: 5, requireAudio: true } };
-  const receipt = { exists: true, hashVerified: true, decodeOk: false, width: 1280, height: 720, fps: 30, durationSeconds: 5, hasAudio: false, provenanceOk: true };
+  const receipt = { exists: true, hashVerified: true, decodeOk: false, width: 1280, height: 720, fps: 30, durationSeconds: 5, hasAudio: false, provenanceOk: true, timelineOk: true, container: 'mov,mp4,m4a,3gp,3g2,mj2', videoCodec: 'h264', pixelFormat: 'yuv420p', audioCodec: '', audioSampleRate: 0 };
   const scores = evaluateMedia(plan, receipt, { blackFrames: 'PASS' }, 'approved');
   assert.equal(scores.decision, 'fail');
-  assert.deepEqual(scores.failedRequired.sort(), ['audio', 'decode']);
+  assert.deepEqual(scores.failedRequired.sort(), ['audio', 'audioFormat', 'decode']);
   assert.equal(scores.gates.find((gate) => gate.id === 'blackFrames').status, 'PASS');
+});
+
+test('every required media gate can be independently broken', () => {
+  const plan = { output: { width: 1280, height: 720, fps: 30, durationSeconds: 5, requireAudio: true } };
+  const receipt = { exists: true, hashVerified: true, decodeOk: true, width: 1280, height: 720, fps: 30, durationSeconds: 5, hasAudio: true, provenanceOk: true, timelineOk: true, container: 'mov,mp4,m4a,3gp,3g2,mj2', videoCodec: 'h264', pixelFormat: 'yuv420p', audioCodec: 'aac', audioSampleRate: 48000 };
+  const cases = [
+    ['file', { exists: false }], ['hash', { hashVerified: false }], ['decode', { decodeOk: false }],
+    ['videoStream', { width: 0 }], ['duration', { durationSeconds: 6 }], ['dimensions', { width: 640 }],
+    ['fps', { fps: 24 }], ['audio', { hasAudio: false }], ['timeline', { timelineOk: false }],
+    ['provenance', { provenanceOk: false }], ['container', { container: 'matroska' }],
+    ['videoCodec', { videoCodec: 'hevc' }], ['pixelFormat', { pixelFormat: 'yuv444p' }],
+    ['audioFormat', { audioCodec: 'mp3' }],
+  ];
+  for (const [id, mutation] of cases) {
+    const result = evaluateMedia(plan, { ...receipt, ...mutation });
+    assert.equal(result.gates.find((gate) => gate.id === id).status, 'FAIL', id);
+  }
 });

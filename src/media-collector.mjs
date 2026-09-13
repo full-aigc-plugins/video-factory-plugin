@@ -2,10 +2,11 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, statSync } from 'node:fs';
 import { sha256File } from './hash.mjs';
 
-export async function collectMedia(path, { provenanceOk = true } = {}) {
+export async function collectMedia(path, { provenanceOk = false, timelineOk = false } = {}) {
   if (!existsSync(path) || !statSync(path).isFile()) throw new Error(`media artifact missing: ${path}`);
   const probe = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-print_format', 'json', '-show_format', '-show_streams', path], { encoding: 'utf8', maxBuffer: 1 << 24 }));
   const video = probe.streams?.find((stream) => stream.codec_type === 'video');
+  const audio = probe.streams?.find((stream) => stream.codec_type === 'audio');
   if (!video) throw new Error('media artifact has no video stream');
   execFileSync('ffmpeg', ['-v', 'error', '-i', path, '-f', 'null', '-'], { stdio: ['ignore', 'ignore', 'pipe'], maxBuffer: 1 << 24 });
   const [num, den] = String(video.avg_frame_rate ?? video.r_frame_rate ?? '0/1').split('/').map(Number);
@@ -15,9 +16,11 @@ export async function collectMedia(path, { provenanceOk = true } = {}) {
     schemaVersion: '1.0.0', path, sha256: secondHash, bytes: statSync(path).size,
     durationSeconds: Number(probe.format?.duration ?? video.duration ?? 0),
     width: Number(video.width), height: Number(video.height), fps: den ? num / den : 0,
-    hasAudio: probe.streams?.some((stream) => stream.codec_type === 'audio') ?? false,
+    hasAudio: Boolean(audio), streamCount: probe.streams?.length ?? 0,
+    videoCodec: video.codec_name ?? '', pixelFormat: video.pix_fmt ?? '',
+    audioCodec: audio?.codec_name ?? '', audioSampleRate: Number(audio?.sample_rate ?? 0), audioChannels: Number(audio?.channels ?? 0),
     container: probe.format?.format_name ?? '', exists: true, hashVerified: firstHash === secondHash,
-    decodeOk: true, provenanceOk,
+    decodeOk: true, provenanceOk, timelineOk,
   };
 }
 

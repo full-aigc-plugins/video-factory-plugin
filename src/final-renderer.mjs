@@ -72,8 +72,8 @@ export async function renderFinal({ inputVideo, audioPath, audioTracks, subtitle
   if (result.error?.code === 'ETIMEDOUT') throw new Error('final render timeout');
   if (result.error) throw new Error(`final renderer unavailable: ${result.error.message}`);
   if (result.status !== 0) throw new Error(`final render failed: ${(result.stderr ?? '').slice(-2000)}`);
-  const tempReceipt = await collectMedia(temp, { provenanceOk: true });
+  const tempReceipt = await collectMedia(temp, { provenanceOk: true, timelineOk: true });
   if (!tempReceipt.decodeOk || !tempReceipt.hashVerified) throw new Error('final render verification failed');
   renameSync(temp, destination);
-  return collectMedia(destination, { provenanceOk: true });
+  return collectMedia(destination, { provenanceOk: true, timelineOk: true });
 }

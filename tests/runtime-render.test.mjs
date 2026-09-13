@@ -26,7 +26,7 @@ test('real FFmpeg renders resumable image segments and a verified rough cut', { 
   assert.equal(first.receipt.decodeOk, true);
   const finalPath = join(root, 'rough.mp4');
   await assembleVideo([first.path, second.path], profile, finalPath);
-  const receipt = await collectMedia(finalPath, { provenanceOk: true });
+  const receipt = await collectMedia(finalPath, { provenanceOk: true, timelineOk: true });
   assert.equal((await verifyReceipt(receipt)).ok, true);
   const scores = evaluateMedia({ output: { width: 1280, height: 720, fps: 30, durationSeconds: 2, requireAudio: false } }, receipt,
     { blackFrames: 'PASS', freezeFrames: 'PASS', silence: 'PASS', subtitleTiming: 'PASS', semanticConsistency: 'PASS' }, 'approved');

@@ -11,7 +11,12 @@ export function evaluateMedia(plan, receipt, evidence = {}, humanLabel = 'unlabe
     gate('dimensions', receipt.width === expected.width && receipt.height === expected.height),
     gate('fps', Math.abs(receipt.fps - expected.fps) <= 0.01),
     gate('audio', !expected.requireAudio || receipt.hasAudio === true),
+    gate('timeline', receipt.timelineOk === true),
     gate('provenance', receipt.provenanceOk === true),
+    gate('container', String(receipt.container).split(',').includes('mp4')),
+    gate('videoCodec', receipt.videoCodec === 'h264'),
+    gate('pixelFormat', receipt.pixelFormat === 'yuv420p'),
+    gate('audioFormat', !expected.requireAudio || (receipt.audioCodec === 'aac' && receipt.audioSampleRate === 48000)),
   ];
   const advisory = ['blackFrames', 'freezeFrames', 'silence', 'subtitleTiming', 'semanticConsistency'].map((id) => ({ id, status: evidence[id] ?? 'NOT_RUN' }));
   const failedRequired = required.filter((item) => item.status === 'FAIL').map((item) => item.id);

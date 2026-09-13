@@ -70,8 +70,8 @@ export async function main(argv, io = { stdout: process.stdout, stderr: process.
       io.stdout.write(`${JSON.stringify(command === 'status' ? job : recoverySummary(job), null, 2)}\n`); return 0;
     }
     if (command === 'evaluate') {
-      const receipt = await collectMedia(argv[1], { provenanceOk: true });
-      const plan = readJson(argv[2]);
+      const plan = validateVideoPlan(readJson(argv[2]));
+      const receipt = await collectMedia(argv[1], { provenanceOk: true, timelineOk: true });
       io.stdout.write(`${JSON.stringify(evaluateMedia(plan, receipt), null, 2)}\n`); return 0;
     }
     io.stderr.write(`Unknown command: ${command}\n`); return 2;

@@ -12,9 +12,9 @@ export async function renderSegment({ source, profile, destination, timeoutMs = 
   if (result.error?.code === 'ETIMEDOUT') throw new Error('segment render timeout');
   if (result.error) throw new Error(`segment renderer unavailable: ${result.error.message}`);
   if (result.status !== 0) throw new Error(`segment render failed: ${(result.stderr ?? '').slice(-2000)}`);
-  const tempReceipt = await collectMedia(temp, { provenanceOk: true });
+  const tempReceipt = await collectMedia(temp, { provenanceOk: true, timelineOk: true });
   if (!tempReceipt.decodeOk || !tempReceipt.hashVerified) throw new Error('segment verification failed');
   renameSync(temp, destination);
-  const receipt = await collectMedia(destination, { provenanceOk: true });
+  const receipt = await collectMedia(destination, { provenanceOk: true, timelineOk: true });
   return { path: destination, attempts: 1, receipt };
 }

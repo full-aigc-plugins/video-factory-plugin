@@ -20,9 +20,9 @@ export async function assembleVideo(segmentPaths, profile, destination, timeoutM
     const result = spawnSync(spec.bin, spec.args, { ...spec.options, timeout: timeoutMs, encoding: 'utf8', maxBuffer: 1 << 24 });
     if (result.error) throw new Error(`assembly unavailable: ${result.error.message}`);
     if (result.status !== 0) throw new Error(`assembly failed: ${(result.stderr ?? '').slice(-2000)}`);
-    await collectMedia(temp, { provenanceOk: true });
+    await collectMedia(temp, { provenanceOk: true, timelineOk: true });
     renameSync(temp, destination);
-    return collectMedia(destination, { provenanceOk: true });
+    return collectMedia(destination, { provenanceOk: true, timelineOk: true });
   } finally {
     rmSync(listPath, { force: true });
   }
