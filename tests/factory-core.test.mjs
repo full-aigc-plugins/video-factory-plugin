@@ -76,6 +76,7 @@ test('plan identity is stable and approval binds stage, round and both hashes', 
   const approval = { schemaVersion: '1.0.0', stage: 'rough', planHash: quote.planHash, editHash: quote.editHash, round: 1, quoteRevision: 1, acceptedAt: '2026-09-14T00:00:00Z' };
   assert.doesNotThrow(() => verifyApproval(approval, quote));
   assert.throws(() => verifyApproval({ ...approval, stage: 'final' }, quote), /approval mismatch/);
+  assert.throws(() => verifyApproval({ ...approval, bypass: true }, quote), /additional property/);
 });
 
 test('atomic ledger recovery never returns completed segments as pending', () => {

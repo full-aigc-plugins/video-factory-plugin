@@ -1,5 +1,12 @@
 import { canonicalHash } from './plan.mjs';
 import { editDurationSeconds } from './edit-decision.mjs';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { validateSchemaInstance } from './schema-lite.mjs';
+
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const APPROVAL_SCHEMA = JSON.parse(readFileSync(join(ROOT, 'schemas', 'video_approval.schema.json'), 'utf8'));
 
 export function quotePlan(plan, stage, revision) {
   if (!['rough', 'final'].includes(stage)) throw new Error('stage must be rough or final');
@@ -22,6 +29,8 @@ export function quotePlan(plan, stage, revision) {
 }
 
 export function verifyApproval(approval, quote) {
+  const issues = validateSchemaInstance(APPROVAL_SCHEMA, approval);
+  if (issues.length) throw new Error(`${issues[0].path}: ${issues[0].message}`);
   const fields = [['stage', quote.stage], ['planHash', quote.planHash], ['editHash', quote.editHash], ['round', quote.round], ['quoteRevision', quote.revision]];
   if (fields.some(([key, expected]) => approval?.[key] !== expected)) throw new Error('approval mismatch');
 }
