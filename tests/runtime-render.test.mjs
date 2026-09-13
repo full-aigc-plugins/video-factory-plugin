@@ -168,3 +168,42 @@ test('approved run with missing media stops before rendering and writes asset re
   await assert.rejects(() => runApproved({ planPath, approvalPath, ledgerPath: join(root, 'job.json'), inputRoot: root, workRoot, outputRoot: join(root, 'output'), stage: 'rough' }), /requirements written/);
   assert.equal(JSON.parse(readFileSync(join(workRoot, 'asset-requirements.json'), 'utf8')).requirements[0].capability, 'image.batch');
 });
+
+test('a new edit revision reuses unchanged shots and rerenders only the changed shot', { timeout: 30000 }, async () => {
+  const root = mkdtempSync(join(tmpdir(), 'video-revision-'));
+  const firstImage = join(root, 'first.png');
+  const secondImage = join(root, 'second.png');
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=red:s=64x64', '-frames:v', '1', firstImage]);
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=blue:s=64x64', '-frames:v', '1', secondImage]);
+  const base = {
+    schemaVersion: '1.0.0', id: 'revision-job', mode: 'local_composition', round: 1,
+    assets: [
+      { id: 'A01', path: 'first.png', sha256: await sha256File(firstImage), kind: 'image', durationTicks: 60 },
+      { id: 'A02', path: 'second.png', sha256: await sha256File(secondImage), kind: 'image', durationTicks: 60 },
+    ],
+    editDecision: { schemaVersion: '1.0.0', id: 'E01', revision: 1, timebase: { numerator: 1, denominator: 30 }, clips: [
+      { id: 'C01', assetId: 'A01', sourceInTicks: 0, sourceOutTicks: 30, timelineInTicks: 0, track: 0, transition: 'cut', gainDb: 0 },
+      { id: 'C02', assetId: 'A02', sourceInTicks: 0, sourceOutTicks: 30, timelineInTicks: 30, track: 0, transition: 'cut', gainDb: 0 },
+    ] },
+    output: { aspect: '16:9', width: 320, height: 180, fps: 30, requireAudio: false },
+  };
+  const execute = async (plan, suffix) => {
+    const quote = quotePlan(plan, 'rough', 1);
+    const approval = { schemaVersion: '1.0.0', stage: 'rough', planHash: quote.planHash, editHash: quote.editHash, round: plan.round, quoteRevision: 1, acceptedAt: '2026-09-14T00:00:00Z' };
+    const planPath = join(root, `plan-${suffix}.json`);
+    const approvalPath = join(root, `approval-${suffix}.json`);
+    writeFileSync(planPath, JSON.stringify(plan));
+    writeFileSync(approvalPath, JSON.stringify(approval));
+    return runApproved({ planPath, approvalPath, ledgerPath: join(root, `job-${suffix}.json`), inputRoot: root, workRoot: join(root, 'work'), outputRoot: join(root, 'output'), stage: 'rough' });
+  };
+  await execute(base, 'v1');
+  const revised = structuredClone(base);
+  revised.round = 2;
+  revised.editDecision.revision = 2;
+  revised.editDecision.clips[1].sourceOutTicks = 45;
+  const result = await execute(revised, 'v2');
+  assert.equal(result.job.segments[0].reused, true);
+  assert.equal(result.job.segments[0].attempts, 0);
+  assert.equal(result.job.segments[1].reused, false);
+  assert.equal(result.job.segments[1].attempts, 1);
+});
