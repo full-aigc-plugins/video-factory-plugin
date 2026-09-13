@@ -39,3 +39,10 @@ test('repository marketplace points at the public main branch', () => {
     ref: 'main',
   });
 });
+
+test('GitHub CI verifies the supported Node floor and current runtime', () => {
+  const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+  assert.match(workflow, /node-version: \[18, 24\]/);
+  assert.match(workflow, /npm test/);
+  assert.match(workflow, /git diff --exit-code -- skills\/video-shots skills\/video-sync/);
+});
