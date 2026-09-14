@@ -302,6 +302,7 @@ codex-video-factory-plugin/
 
 ## 深入文档
 
+- [Architecture](docs/Codex-Video-Factory-Plugin-Architecture.md) · [架构文档](docs/Codex-Video-Factory-Plugin-Architecture.zh_CN.md)
 - [架构与设计规格](docs/superpowers/specs/2026-09-14-codex-video-factory-plugin-design.md)
 - [实施计划](docs/superpowers/plans/2026-09-14-local-composition-v0.1.0.md)
 - [CLI 实操手册（中文）](docs/guides/current-cli-recipes.zh-CN.md)
