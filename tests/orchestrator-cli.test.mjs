@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { main } from '../src/cli.mjs';
 import { recoverySummary } from '../src/orchestrator.mjs';
+import { collectMedia } from '../src/media-collector.mjs';
 
 const capture = () => {
   let stdout = '';
@@ -69,16 +70,23 @@ test('CLI evaluation derives expected duration from the edit rather than an unde
   const out = capture();
   assert.equal(await main(['evaluate', artifact, planPath], out.io), 0);
   const scores = JSON.parse(out.read().stdout);
-  assert.deepEqual(scores.failedRequired, []);
+  assert.deepEqual(scores.failedRequired.sort(), ['provenance', 'timeline']);
   assert.equal(scores.gates.find((gate) => gate.id === 'duration').status, 'PASS');
 });
 
 test('CLI accept is the only path from ReviewReady to Completed', async () => {
   const root = mkdtempSync(join(tmpdir(), 'video-accept-'));
   const ledgerPath = join(root, 'job.json');
-  writeFileSync(ledgerPath, JSON.stringify({ schemaVersion: '1.0.0', id: 'J1', revision: 3, state: 'ReviewReady', planHash: 'a'.repeat(64), stage: 'final', segments: [], history: [], scores: { schemaVersion: '1.0.0', decision: 'review', failedRequired: [], gates: [], humanLabel: 'unlabeled' } }));
+  const artifactPath = join(root, 'final.mp4');
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=green:s=320x180:d=1:r=30', '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-shortest', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', artifactPath]);
+  const artifact = await collectMedia(artifactPath, { provenanceOk: true, timelineOk: true });
+  writeFileSync(ledgerPath, JSON.stringify({ schemaVersion: '1.0.0', id: 'J1', revision: 3, state: 'ReviewReady', planHash: 'a'.repeat(64), stage: 'final', segments: [], history: [], artifact, scores: { schemaVersion: '1.0.0', decision: 'review', failedRequired: [], gates: [], humanLabel: 'unlabeled' } }));
   const out = capture();
   assert.equal(await main(['accept', ledgerPath, '--decision', 'approved', '--note', 'played and accepted'], out.io), 0);
   assert.equal(JSON.parse(out.read().stdout).state, 'Completed');
   assert.equal(JSON.parse(readFileSync(ledgerPath, 'utf8')).review.decision, 'approved');
+  writeFileSync(artifactPath, 'tampered');
+  const second = capture();
+  assert.equal(await main(['accept', ledgerPath, '--decision', 'approved'], second.io), 1);
+  assert.match(second.read().stderr, /artifact.*verification|hash mismatch/);
 });

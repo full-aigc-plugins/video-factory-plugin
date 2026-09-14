@@ -8,6 +8,7 @@ const concatEscape = (path) => path.replaceAll("'", "'\\''");
 
 export async function assembleVideo(segmentPaths, profile, destination, timeoutMs = 120000, timeline = null) {
   if (!segmentPaths.length) throw new Error('assembly requires at least one segment');
+  for (const path of [...segmentPaths, destination]) if (/[\r\n\0]/.test(path)) throw new Error('assembly paths contain control characters');
   mkdirSync(dirname(destination), { recursive: true });
   const listPath = join(dirname(destination), `.concat-${process.pid}.txt`);
   const temp = `${destination}.tmp-${process.pid}.mp4`;
@@ -20,9 +21,9 @@ export async function assembleVideo(segmentPaths, profile, destination, timeoutM
     const result = spawnSync(spec.bin, spec.args, { ...spec.options, timeout: timeoutMs, encoding: 'utf8', maxBuffer: 1 << 24 });
     if (result.error) throw new Error(`assembly unavailable: ${result.error.message}`);
     if (result.status !== 0) throw new Error(`assembly failed: ${(result.stderr ?? '').slice(-2000)}`);
-    await collectMedia(temp, { provenanceOk: true, timelineOk: true });
+    await collectMedia(temp);
     renameSync(temp, destination);
-    return collectMedia(destination, { provenanceOk: true, timelineOk: true });
+    return collectMedia(destination);
   } finally {
     rmSync(listPath, { force: true });
   }

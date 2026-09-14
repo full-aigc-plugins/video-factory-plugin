@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { compileDissolveAssembly, compileSegment, outputProfile, segmentKey } from '../src/ffmpeg-compiler.mjs';
+import { compileAssembly, compileDissolveAssembly, compileSegment, outputProfile, segmentKey } from '../src/ffmpeg-compiler.mjs';
 import { evaluateMedia } from '../src/media-evaluator.mjs';
 import { compileMaster } from '../src/final-renderer.mjs';
 
@@ -74,10 +74,18 @@ test('dissolve assembly compiles a bounded xfade and acrossfade graph', () => {
   assert.throws(() => compileDissolveAssembly(['/work/A.mp4'], [2], ['cut'], profile, '/work/out.mp4'), /at least two/);
 });
 
+test('concat assembly restricts protocols and rejects list control characters', () => {
+  const spec = compileAssembly('/work/list.txt', profile, '/work/out.mp4');
+  assert.deepEqual(spec.args.slice(3, 5), ['-protocol_whitelist', 'file,pipe']);
+  assert.throws(() => compileAssembly('/work/list\ninjected.txt', profile, '/work/out.mp4'), /control characters/);
+});
+
 test('segment identity changes with source hash or edit parameters', () => {
-  const base = { id: 'C01', assetHash: 'a'.repeat(64), sourceInTicks: 0, sourceOutTicks: 60, profile };
+  const base = { rendererVersion: 1, id: 'C01', kind: 'image', assetHash: 'a'.repeat(64), sourceInTicks: 0, sourceOutTicks: 60, motion: 'static', transition: 'cut', profile };
   assert.equal(segmentKey(base), segmentKey(structuredClone(base)));
   assert.notEqual(segmentKey(base), segmentKey({ ...base, sourceOutTicks: 61 }));
+  assert.notEqual(segmentKey(base), segmentKey({ ...base, motion: 'pan-left' }));
+  assert.notEqual(segmentKey(base), segmentKey({ ...base, transition: 'fade' }));
 });
 
 test('required media failure outranks advisory findings and human approval', () => {

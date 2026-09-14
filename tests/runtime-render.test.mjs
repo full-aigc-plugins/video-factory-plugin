@@ -44,6 +44,13 @@ test('content-addressed segment reuse requires an untampered file and sidecar re
   assert.equal(reused.reused, true);
   assert.equal(reused.attempts, 0);
   assert.equal(reused.receipt.sha256, first.receipt.sha256);
+  const sidecarPath = `${destination}.receipt.json`;
+  const sidecar = JSON.parse(readFileSync(sidecarPath, 'utf8'));
+  sidecar.path = join(root, 'alternate.mp4');
+  writeFileSync(sidecar.path, readFileSync(destination));
+  writeFileSync(sidecarPath, JSON.stringify(sidecar));
+  const rebound = await renderSegment(request);
+  assert.equal(rebound.reused, false);
   writeFileSync(destination, 'tampered');
   const repaired = await renderSegment(request);
   assert.equal(repaired.reused, false);
@@ -242,6 +249,12 @@ test('an interrupted Running ledger resumes only pending work with the same idem
   assert.equal(resumed.job.segments[0].attempts, 1);
   assert.equal(resumed.job.segments[1].attempts, 0);
   assert.equal(resumed.job.segments[1].reused, true);
+  const collecting = structuredClone(resumed.job);
+  collecting.state = 'Collecting';
+  writeFileSync(ledgerPath, JSON.stringify(collecting));
+  const collectedAgain = await runApproved(request);
+  assert.equal(collectedAgain.job.state, 'ReviewReady');
+  assert.equal(collectedAgain.job.segments.every((segment) => segment.attempts <= 1), true);
 });
 
 test('real final profiles render both portrait and square deliverables', { timeout: 30000 }, async () => {
@@ -299,7 +312,10 @@ test('six-image story plan renders varied camera motion into a verified rough cu
   for (let index = 0; index < colors.length; index += 1) {
     const path = join(root, `story-${index + 1}.png`);
     execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', `color=${colors[index]}:s=64x64`, '-frames:v', '1', path]);
-    assets.push({ id: `A0${index + 1}`, path: `story-${index + 1}.png`, sha256: await sha256File(path), kind: 'image', durationTicks: 15, source: 'codex-image-factory' });
+    const sha256 = await sha256File(path);
+    const receiptPath = `story-${index + 1}.receipt.json`;
+    writeFileSync(join(root, receiptPath), JSON.stringify({ schemaVersion: '1.0.0', source: 'codex-image-factory', path: `story-${index + 1}.png`, sha256, kind: 'image' }));
+    assets.push({ id: `A0${index + 1}`, path: `story-${index + 1}.png`, sha256, kind: 'image', durationTicks: 15, source: 'codex-image-factory', receiptPath });
   }
   const motions = ['static', 'zoom-in', 'pan-left', 'zoom-out', 'pan-right', 'static'];
   const clips = assets.map((asset, index) => ({ id: `C0${index + 1}`, assetId: asset.id, sourceInTicks: 0, sourceOutTicks: 15, timelineInTicks: index * 15, track: 0, transition: index % 2 ? 'fade' : 'cut', motion: motions[index], gainDb: 0 }));

@@ -50,7 +50,8 @@ export function compileSegment(source, profile, destination) {
 }
 
 export function compileAssembly(listPath, profile, destination) {
-  return { bin: 'ffmpeg', args: ['-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', listPath, '-c', 'copy', '-movflags', '+faststart', destination], options: { shell: false, stdio: ['ignore', 'ignore', 'pipe'] } };
+  for (const value of [listPath, destination]) if (/[\r\n\0]/.test(value)) throw new Error('assembly paths contain control characters');
+  return { bin: 'ffmpeg', args: ['-v', 'error', '-y', '-protocol_whitelist', 'file,pipe', '-f', 'concat', '-safe', '0', '-i', listPath, '-c', 'copy', '-movflags', '+faststart', destination], options: { shell: false, stdio: ['ignore', 'ignore', 'pipe'] } };
 }
 
 const dissolveDuration = (previous, current, transition) => transition === 'dissolve'

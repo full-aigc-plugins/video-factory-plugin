@@ -1,7 +1,7 @@
 export function validateEditDecision(decision, assetDurations = {}) {
   const ids = new Set();
-  const byTrack = new Map();
-  for (const clip of decision.clips ?? []) {
+  let timelineEnd = 0;
+  for (const [index, clip] of (decision.clips ?? []).entries()) {
     if (ids.has(clip.id)) throw new Error(`duplicate clip id: ${clip.id}`);
     ids.add(clip.id);
     if (!Number.isInteger(clip.sourceInTicks) || !Number.isInteger(clip.sourceOutTicks)
@@ -10,11 +10,12 @@ export function validateEditDecision(decision, assetDurations = {}) {
       throw new Error(`invalid source range: ${clip.id}`);
     }
     if (!Number.isInteger(clip.timelineInTicks) || clip.timelineInTicks < 0) throw new Error(`invalid timeline position: ${clip.id}`);
+    if (clip.track !== 0) throw new Error('0.1.0 supports video track 0 only');
+    if (index === 0 && clip.timelineInTicks !== 0) throw new Error('timeline must start at tick 0');
+    if (index > 0 && clip.timelineInTicks < (decision.clips[index - 1]?.timelineInTicks ?? 0)) throw new Error(`clips must be in timeline order: ${clip.id}`);
+    if (index > 0 && clip.timelineInTicks !== timelineEnd) throw new Error(`timeline gap or overlap: ${clip.id}`);
     const end = clip.timelineInTicks + clip.sourceOutTicks - clip.sourceInTicks;
-    const entries = byTrack.get(clip.track) ?? [];
-    if (entries.some((item) => clip.timelineInTicks < item.end && end > item.start)) throw new Error(`timeline overlap: ${clip.id}`);
-    entries.push({ start: clip.timelineInTicks, end });
-    byTrack.set(clip.track, entries);
+    timelineEnd = end;
   }
   return decision;
 }

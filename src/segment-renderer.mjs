@@ -10,7 +10,7 @@ export async function renderSegment({ source, profile, destination, timeoutMs = 
   if (existsSync(destination) && existsSync(receiptPath)) {
     try {
       const stored = JSON.parse(readFileSync(receiptPath, 'utf8'));
-      if ((await verifyReceipt(stored)).ok && stored.decodeOk && stored.hashVerified) {
+      if (stored.path === destination && (await verifyReceipt(stored)).ok && stored.decodeOk && stored.hashVerified) {
         return { path: destination, attempts: 0, reused: true, receipt: stored };
       }
     } catch {

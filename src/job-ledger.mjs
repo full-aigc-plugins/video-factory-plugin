@@ -11,8 +11,8 @@ const TRANSITIONS = {
   Running: ['Partial', 'Collecting', 'Blocked', 'Failed'],
   Partial: ['Running', 'Failed'],
   Blocked: ['Running', 'Failed'],
-  Collecting: ['Verifying', 'Failed'],
-  Verifying: ['ReviewReady', 'Failed'],
+  Collecting: ['Running', 'Verifying', 'Blocked', 'Failed'],
+  Verifying: ['Running', 'ReviewReady', 'Blocked', 'Failed'],
   ReviewReady: ['Completed', 'ReworkReady'],
   ReworkReady: [], Completed: [], Failed: [],
 };

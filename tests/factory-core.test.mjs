@@ -42,6 +42,7 @@ test('cross-plugin asset registration verifies the public receipt hash', async (
   assert.equal(registered.B01.receipt.source, 'codex-blender-plugin');
   writeFileSync(receipt, JSON.stringify({ schemaVersion: '1.0.0', source: 'codex-blender-plugin', path: 'blender.mp4', sha256: 'f'.repeat(64), kind: 'video' }));
   await assert.rejects(() => registerAssets([{ id: 'B01', path: 'blender.mp4', sha256: hash, kind: 'video', source: 'codex-blender-plugin', receiptPath: 'blender.receipt.json' }], root), /receipt hash mismatch/);
+  await assert.rejects(() => registerAssets([{ id: 'B01', path: 'blender.mp4', sha256: hash, kind: 'video', source: 'codex-blender-plugin' }], root), /requires receiptPath/);
 });
 
 test('missing assets produce an atomic public handoff without probing outside the grant', () => {

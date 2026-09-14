@@ -66,8 +66,11 @@ test('asset manifest accepts public Image Factory and Blender receipt fields', (
 test('edit decision behavior rejects duplicate ids, overlaps and invalid source ranges', () => {
   assert.deepEqual(validateEditDecision(decision, { A01: 60, A02: 120 }), decision);
   assert.throws(() => validateEditDecision({ ...decision, clips: [decision.clips[0], { ...decision.clips[1], id: 'C01' }] }, { A01: 60, A02: 120 }), /duplicate clip id/);
-  assert.throws(() => validateEditDecision({ ...decision, clips: [decision.clips[0], { ...decision.clips[1], timelineInTicks: 30 }] }, { A01: 60, A02: 120 }), /timeline overlap/);
+  assert.throws(() => validateEditDecision({ ...decision, clips: [decision.clips[0], { ...decision.clips[1], timelineInTicks: 30 }] }, { A01: 60, A02: 120 }), /timeline gap or overlap/);
   assert.throws(() => validateEditDecision({ ...decision, clips: [{ ...decision.clips[0], sourceOutTicks: 61 }] }, { A01: 60 }), /source range/);
+  assert.throws(() => validateEditDecision({ ...decision, clips: [{ ...decision.clips[0], timelineInTicks: 10 }] }, { A01: 60 }), /start at tick 0/);
+  assert.throws(() => validateEditDecision({ ...decision, clips: [{ ...decision.clips[0], track: 1 }] }, { A01: 60 }), /track 0/);
+  assert.throws(() => validateEditDecision({ ...decision, clips: [{ ...decision.clips[1], timelineInTicks: 0 }, { ...decision.clips[0], timelineInTicks: 80 }] }, { A01: 60, A02: 120 }), /timeline gap or overlap/);
 });
 
 test('runtime job and score producers conform to their public schemas', () => {

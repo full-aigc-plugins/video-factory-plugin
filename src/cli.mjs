@@ -3,10 +3,10 @@ import { dirname, resolve } from 'node:path';
 import { quotePlan } from './approval.mjs';
 import { collectMedia } from './media-collector.mjs';
 import { evaluateMedia } from './media-evaluator.mjs';
-import { recoverySummary, runApproved } from './orchestrator.mjs';
+import { acceptJob, recoverySummary, runApproved } from './orchestrator.mjs';
 import { canonicalHash, validateVideoPlan } from './plan.mjs';
 import { probeCapabilities } from './probe.mjs';
-import { readLedger, recordHumanDecision, writeLedger } from './job-ledger.mjs';
+import { readLedger } from './job-ledger.mjs';
 import { effectiveAssemblyDuration, outputProfile } from './ffmpeg-compiler.mjs';
 import { assertReviewInput, runAnalyzeEvidence, runFinalizeAnalysis, runReviewSync } from './integrations/reelbench-adapter.mjs';
 
@@ -84,13 +84,12 @@ export async function main(argv, io = { stdout: process.stdout, stderr: process.
     }
     if (command === 'accept') {
       const ledgerPath = resolve(argv[1]);
-      const updated = recordHumanDecision(readLedger(ledgerPath), String(flag(argv, '--decision')), String(flag(argv, '--note', '')));
-      writeLedger(ledgerPath, updated);
+      const updated = await acceptJob({ ledgerPath, decision: String(flag(argv, '--decision')), note: String(flag(argv, '--note', '')) });
       io.stdout.write(`${JSON.stringify(updated, null, 2)}\n`); return 0;
     }
     if (command === 'evaluate') {
       const plan = validateVideoPlan(readJson(argv[2]));
-      const receipt = await collectMedia(argv[1], { provenanceOk: true, timelineOk: true });
+      const receipt = await collectMedia(argv[1]);
       const secondsPerTick = plan.editDecision.timebase.numerator / plan.editDecision.timebase.denominator;
       const durations = plan.editDecision.clips.map((clip) => (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick);
       const transitions = plan.editDecision.clips.map((clip) => clip.transition);
