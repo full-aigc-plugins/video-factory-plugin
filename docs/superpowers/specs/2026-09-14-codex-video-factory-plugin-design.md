@@ -1,6 +1,6 @@
 # Codex Video Factory Plugin 设计规格
 
-> 状态：设计已批准，等待用户复核与实施计划。
+> 状态：设计已确认，进入 0.1.0 实施。
 >
 > 日期：2026-09-14。
 >
@@ -8,8 +8,9 @@
 
 ## 1. 产品定义
 
-`codex-video-factory-plugin` 是 Codex 驱动的、可批准、可恢复、可核验的视频生产工厂。
-它接收已经明确的视频目标、镜头计划和授权素材，生成最终视频及媒体回执。
+`codex-video-factory-plugin` 是 Codex 驱动的视频生成编排、自动剪辑、视频合成与成片质量工厂。
+它接收剪辑目标和授权素材，通过拉片生成证据，由 Codex 形成 EditDecision，再生成粗剪、
+同步审阅版、终版和媒体回执。
 
 首版交付模式 B：Codex 负责编排与语义判断，本机 FFmpeg/ffprobe 负责确定性的视频制作、
 测量和核验。未来模式 A 只在 Codex 真正暴露原生视频生成工具后启用；没有可验证能力时
@@ -146,7 +147,7 @@ work/<job_id>/round-<n>/
 
 采用策略：
 
-- 原始快照放入 `vendor/upstream`，保持字节和提交身份，不进入活跃 Skill；
+- `video-shots` 与 `video-sync` 作为活跃 Skill 原样集成，27 个文件保持字节和提交身份；
 - 保留 LICENSE、NOTICE、来源、固定 revision 和修改说明；
 - `video-shots` 的切点、时长、运动曲线、联系表和质量门用于参考视频分析与成片核验；
 - `video-sync` 的同步镜头面板用于生成内部审阅版，不作为客户最终视频默认样式；
@@ -163,14 +164,15 @@ work/<job_id>/round-<n>/
 
 ## 8. 活跃 Skills
 
-首版保持六个职责清晰的 Skill：
+首版保持七个职责清晰的 Skill：
 
 1. `codex-video-factory-use`：统一入口，根据目标和台账状态路由。
-2. `codex-video-factory-plan`：把已批准创意输入转成可校验 Video Plan。
-3. `codex-video-factory-run`：报价、批准、分段渲染、最终装配和产物采集。
+2. `codex-video-factory-plan`：把素材、拉片证据和剪辑目标转成可校验 EditDecision 与 Video Plan。
+3. `codex-video-factory-run`：粗剪/终版报价、双阶段批准、分段渲染、装配和产物采集。
 4. `codex-video-factory-judge`：媒体硬门禁、语义建议和人工标签。
 5. `codex-video-factory-recover`：读取台账，给出唯一合法下一步，不自动重试。
-6. `codex-video-factory-inspect`：参考视频拉片、成片反向分析和内部同步审阅版。
+6. `video-shots`：原样 ReelBench 拉片、镜头分析和报告能力。
+7. `video-sync`：原样 ReelBench 同步镜头信息审阅视频能力。
 
 Skill 只描述何时使用、输入输出、批准点和失败边界。确定性逻辑全部落在可测试脚本中。
 
@@ -178,13 +180,15 @@ Skill 只描述何时使用、输入输出、批准点和失败边界。确定�
 
 ```text
 bin/video-factory probe
+bin/video-factory analyze <video-file> --out <evidence-dir>
+bin/video-factory analyze-finalize <shots.json> --track <track.json> --frames <frames-dir>
 bin/video-factory validate-plan <video-plan.json>
-bin/video-factory quote <video-plan.json>
-bin/video-factory run <video-plan.json> --approval <approval.json>
+bin/video-factory quote <video-plan.json> --stage rough|final
+bin/video-factory run <video-plan.json> --stage rough|final --approval <approval.json>
+bin/video-factory review-sync <rough-cut> <shots.json>
 bin/video-factory status <job-ledger.json>
-bin/video-factory verify <artifact-receipt.json>
-bin/video-factory evaluate <video-plan.json> <job-ledger.json>
-bin/video-factory inspect <video-file> --purpose <reference|quality|rhythm>
+bin/video-factory evaluate <artifact> <video-plan.json> [--stage rough|final]
+bin/video-factory accept <job-ledger.json> --decision approved|rejected
 bin/video-factory recover <job-ledger.json>
 ```
 
@@ -199,7 +203,7 @@ bin/video-factory recover <job-ledger.json>
 - `video_approval.schema.json`：plan hash、round、最大远程调用数和本地资源确认；
 - `media_artifact_receipt.schema.json`：路径、SHA-256、字节、容器、流、时长、画幅和编码；
 - `media_scores.schema.json`：确定性门、建议评分、人工标签和最终决定；
-- `shot_analysis.schema.json`：切点、镜头、运动证据、语义标注和跳过门状态。
+- `reelbench_evidence.schema.json`：切点、运动、关键帧、联系表、报告、哈希清单和跳过门状态。
 
 所有 Schema 使用 JSON Schema Draft 2020-12、`additionalProperties: false`，版本字段必填。
 文件路径不是身份；Artifact ID 与内容哈希共同确定不可变产物。
@@ -299,7 +303,7 @@ stateDiagram-v2
 - 杀死渲染进程后恢复，证明已完成分段不重做；
 - 篡改输入、分段、成片和回执，证明哈希门能发现；
 - 缺 FFmpeg、缺音频、磁盘不足、非法路径和损坏媒体；
-- Chrome 可用/不可用时 inspect 与主生产链正确降级。
+- Chrome 可用/不可用时同步审阅与主生产链正确降级。
 
 ### 真实验收
 
@@ -313,14 +317,10 @@ stateDiagram-v2
 
 ## 16. 分阶段交付
 
-### 0.1.0 — 本地视频生产闭环
+### 0.1.0 — 自动剪辑与本地视频生产闭环
 
-模式 B、Video Plan、批准、分段渲染、最终装配、回执、硬门禁、恢复和六个活跃 Skill。
-
-### 0.1.1 — 拉片与审阅证据
-
-引入经归属治理的 ReelBench 方法：参考视频拉片、运动曲线、联系表、节奏分析和内部同步
-审阅视频；不改变主生产链。
+原样 ReelBench 拉片与同步审阅、EditDecision、粗剪/终版双阶段批准、分段渲染、最终装配、
+回执、硬门禁、恢复和七个活跃 Skill。
 
 ### 0.2.0 — Codex 原生视频适配器
 
@@ -339,5 +339,6 @@ stateDiagram-v2
 
 ## 18. 当前事实状态
 
-本仓库当前只有本设计规格。CLI、Schema、Skills、渲染器、测试、插件清单和运行证据均尚未
-实现。本文不能作为产品已就绪、视频已生成或 Marketplace 已发布的证明。
+0.1.0 的 CLI、闭合 Schema、七个 Skills、原样 ReelBench 快照、渲染器、台账、批准、恢复、
+媒体门和测试已经实现。源码实现不等于 Marketplace 发布；离线测试、真实运行、远端推送、
+新缓存安装和人工播放仍必须在发布证据中分别记录。

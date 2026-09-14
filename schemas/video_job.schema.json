@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://partme.ai/schemas/video/video-job-1.0.0.json",
+  "title": "VideoJob",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "revision", "state", "planHash", "stage", "segments", "history"],
+  "properties": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "id": {"type": "string", "minLength": 1},
+    "revision": {"type": "integer", "minimum": 1},
+    "state": {"type": "string", "enum": ["AwaitingApproval", "Running", "Partial", "Blocked", "Collecting", "Verifying", "ReviewReady", "ReworkReady", "Completed", "Failed"]},
+    "planHash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "stage": {"type": "string", "enum": ["rough", "final"]},
+    "segments": {"type": "array", "items": {"$ref": "#/$defs/segment"}},
+    "history": {"type": "array", "items": {"$ref": "#/$defs/history"}},
+    "artifact": {"$ref": "#/$defs/mediaReceipt"},
+    "scores": {"$ref": "#/$defs/mediaScores"},
+    "review": {"$ref": "#/$defs/review"}
+  },
+  "$defs": {
+    "segment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "state", "attempts"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "state": {"type": "string", "enum": ["Pending", "Completed", "Failed"]},
+        "attempts": {"type": "integer", "minimum": 0},
+        "reused": {"type": "boolean"},
+        "receipt": {"$ref": "#/$defs/mediaReceipt"},
+        "error": {"$ref": "#/$defs/error"}
+      }
+    },
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to", "note"],
+      "properties": {
+        "from": {"type": "string", "minLength": 1},
+        "to": {"type": "string", "minLength": 1},
+        "note": {"type": "string"}
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["message"],
+      "properties": {
+        "message": {"type": "string", "minLength": 1},
+        "code": {"type": "string", "minLength": 1}
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "note"],
+      "properties": {
+        "decision": {"type": "string", "enum": ["approved", "rejected"]},
+        "note": {"type": "string", "maxLength": 2000},
+        "verifiedSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "verifiedAt": {"type": "string", "minLength": 1}
+      }
+    },
+    "mediaReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "path", "sha256", "bytes", "durationSeconds", "width", "height", "fps", "hasAudio", "container", "streamCount", "videoCodec", "pixelFormat", "videoStartSeconds", "audioCodec", "audioSampleRate", "audioChannels", "audioStartSeconds", "exists", "hashVerified", "decodeOk", "provenanceOk", "timelineOk"],
+      "properties": {
+        "schemaVersion": {"type": "string", "const": "1.0.0"},
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "bytes": {"type": "integer", "minimum": 1},
+        "durationSeconds": {"type": "number", "minimum": 0},
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "fps": {"type": "number", "minimum": 0},
+        "hasAudio": {"type": "boolean"},
+        "container": {"type": "string", "minLength": 1},
+        "streamCount": {"type": "integer", "minimum": 1},
+        "videoCodec": {"type": "string", "minLength": 1},
+        "pixelFormat": {"type": "string", "minLength": 1},
+        "videoStartSeconds": {"type": "number"},
+        "audioCodec": {"type": "string"},
+        "audioSampleRate": {"type": "integer", "minimum": 0},
+        "audioChannels": {"type": "integer", "minimum": 0},
+        "audioStartSeconds": {"type": "number"},
+        "exists": {"type": "boolean"},
+        "hashVerified": {"type": "boolean"},
+        "decodeOk": {"type": "boolean"},
+        "provenanceOk": {"type": "boolean"},
+        "timelineOk": {"type": "boolean"},
+        "descriptorKey": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "bindingKey": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "mediaScores": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "decision", "failedRequired", "gates", "humanLabel"],
+      "properties": {
+        "schemaVersion": {"type": "string", "const": "1.0.0"},
+        "decision": {"type": "string", "enum": ["pass", "fail", "review"]},
+        "failedRequired": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "gates": {"type": "array", "items": {"$ref": "#/$defs/gate"}},
+        "humanLabel": {"type": "string", "enum": ["unlabeled", "approved", "rejected"]}
+      }
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "enum": ["PASS", "FAIL", "SKIPPED", "NOT_RUN"]}
+      }
+    }
+  }
+}
