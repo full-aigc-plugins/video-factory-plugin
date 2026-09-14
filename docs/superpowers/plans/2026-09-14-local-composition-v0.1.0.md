@@ -128,7 +128,8 @@ flowchart LR
 - [x] 真实验收：多段视频、六图片故事、Blender 回执、拉片、同步审阅、单镜修改、三画幅、恢复。
 - [x] Factory Skills TRACE 确定性评测已记录，未对低分做美化。
 - [x] 功能分支已同步远端，本地/tracking/remote SHA 一致。
-- [ ] 主分支集成和发布标签。
+- [x] 已本地集成 main。
+- [ ] 推送 main 和发布标签。
 - [ ] 从远端 Marketplace 新缓存安装并核对源码/缓存哈希。
 - [ ] 用户人工连续播放代表粗剪、同步审阅版和终版并确认。
 
@@ -142,7 +143,7 @@ flowchart LR
 - [x] 功能分支三方 SHA（本地、tracking、remote）一致。
 - [x] GitHub Actions Node 18/24 真实媒体 CI 通过。
 - [ ] 主分支发布后三方 SHA 一致。
-- [ ] 两条独立代码审查通道返回证据（当前因未授权子智能体而 unavailable）。
+- [x] 两条独立代码审查通道返回证据：代码/安全 APPROVE，架构 WATCH，无合并阻断。
 - [ ] 新 Marketplace 缓存安装与新会话发现通过。
 - [ ] 人工播放结果由用户明确记录。
 
