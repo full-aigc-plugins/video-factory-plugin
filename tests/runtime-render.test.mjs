@@ -47,7 +47,7 @@ test('content-addressed segment reuse requires an untampered file and sidecar re
   const sidecarPath = `${destination}.receipt.json`;
   const sidecar = JSON.parse(readFileSync(sidecarPath, 'utf8'));
   sidecar.path = join(root, 'alternate.mp4');
-  writeFileSync(sidecar.path, readFileSync(destination));
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=black:s=320x180:d=0.5:r=30', '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-shortest', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', sidecar.path]);
   writeFileSync(sidecarPath, JSON.stringify(sidecar));
   const rebound = await renderSegment(request);
   assert.equal(rebound.reused, false);
@@ -55,6 +55,13 @@ test('content-addressed segment reuse requires an untampered file and sidecar re
   const repaired = await renderSegment(request);
   assert.equal(repaired.reused, false);
   assert.equal(repaired.receipt.decodeOk, true);
+  const coordinated = JSON.parse(readFileSync(`${destination}.receipt.json`, 'utf8'));
+  writeFileSync(destination, readFileSync(sidecar.path));
+  coordinated.sha256 = await sha256File(destination);
+  coordinated.bytes = readFileSync(destination).length;
+  writeFileSync(`${destination}.receipt.json`, JSON.stringify(coordinated));
+  const coordinatedRepair = await renderSegment(request);
+  assert.equal(coordinatedRepair.reused, false);
 });
 
 test('real FFmpeg assembles two normalized segments with a dissolve', { timeout: 30000 }, async () => {
@@ -216,6 +223,13 @@ test('a new edit revision reuses unchanged shots and rerenders only the changed 
   assert.equal(result.job.segments[0].attempts, 0);
   assert.equal(result.job.segments[1].reused, false);
   assert.equal(result.job.segments[1].attempts, 1);
+  const retimed = structuredClone(revised);
+  retimed.round = 3;
+  retimed.editDecision.revision = 3;
+  retimed.editDecision.timebase.denominator = 60;
+  const retimedResult = await execute(retimed, 'v3');
+  assert.equal(retimedResult.job.segments.every((segment) => segment.reused === false && segment.attempts === 1), true);
+  assert.ok(Math.abs(retimedResult.receipt.durationSeconds - 1.25) < 0.15);
 });
 
 test('an interrupted Running ledger resumes only pending work with the same idempotency keys', { timeout: 30000 }, async () => {

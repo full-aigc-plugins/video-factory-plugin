@@ -62,10 +62,11 @@ export async function runApproved({ planPath, approvalPath, ledgerPath, inputRoo
   for (const clip of plan.editDecision.clips) {
     if (!pendingSegments(job).includes(clip.id)) continue;
     const asset = assets[clip.assetId];
-    const descriptor = { rendererVersion: 1, id: clip.id, kind: asset.kind, assetHash: asset.sha256, sourceInTicks: clip.sourceInTicks, sourceOutTicks: clip.sourceOutTicks, motion: clip.motion ?? 'static', transition: clip.transition, gainDb: clip.gainDb, profile };
-    const destination = join(workRoot, 'segments', `${clip.id}-${segmentKey(descriptor)}.mp4`);
+    const descriptor = { rendererVersion: 1, id: clip.id, kind: asset.kind, assetHash: asset.sha256, timebase: plan.editDecision.timebase, sourceInTicks: clip.sourceInTicks, sourceOutTicks: clip.sourceOutTicks, sourceInSeconds: clip.sourceInTicks * secondsPerTick, durationSeconds: (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick, motion: clip.motion ?? 'static', transition: clip.transition, gainDb: clip.gainDb, profile };
+    const descriptorKey = segmentKey(descriptor);
+    const destination = join(workRoot, 'segments', `${clip.id}-${descriptorKey}.mp4`);
     try {
-      const outcome = await renderSegment({ source: { id: clip.id, kind: asset.kind, path: asset.path, sourceInSeconds: clip.sourceInTicks * secondsPerTick, durationSeconds: (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick, motion: clip.motion ?? 'static', transition: clip.transition }, profile, destination });
+      const outcome = await renderSegment({ source: { id: clip.id, kind: asset.kind, path: asset.path, sourceInSeconds: clip.sourceInTicks * secondsPerTick, durationSeconds: (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick, motion: clip.motion ?? 'static', transition: clip.transition }, profile, destination, descriptorKey });
       job = markSegment(job, clip.id, outcome.receipt, { attempts: outcome.attempts, reused: outcome.reused });
       writeLedger(ledgerPath, job);
     } catch (error) {
@@ -106,7 +107,7 @@ export async function runApproved({ planPath, approvalPath, ledgerPath, inputRoo
     const segmentChecks = await Promise.all(job.segments.map((segment) => verifyReceipt(segment.receipt)));
     receipt = {
       ...receipt,
-      provenanceOk: segmentChecks.every((check) => check.ok) && Object.keys(assets).length === plan.assets.length,
+      provenanceOk: segmentChecks.every((check) => check.ok) && job.segments.every((segment) => typeof segment.receipt.descriptorKey === 'string') && Object.keys(assets).length === plan.assets.length,
       timelineOk: Math.abs(receipt.durationSeconds - durationSeconds) <= 0.15,
     };
     job = transition(job, 'Verifying', 'assembled artifact');

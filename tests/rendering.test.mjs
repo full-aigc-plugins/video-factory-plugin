@@ -81,11 +81,12 @@ test('concat assembly restricts protocols and rejects list control characters', 
 });
 
 test('segment identity changes with source hash or edit parameters', () => {
-  const base = { rendererVersion: 1, id: 'C01', kind: 'image', assetHash: 'a'.repeat(64), sourceInTicks: 0, sourceOutTicks: 60, motion: 'static', transition: 'cut', profile };
+  const base = { rendererVersion: 1, id: 'C01', kind: 'image', assetHash: 'a'.repeat(64), timebase: { numerator: 1, denominator: 30 }, sourceInTicks: 0, sourceOutTicks: 60, sourceInSeconds: 0, durationSeconds: 2, motion: 'static', transition: 'cut', profile };
   assert.equal(segmentKey(base), segmentKey(structuredClone(base)));
   assert.notEqual(segmentKey(base), segmentKey({ ...base, sourceOutTicks: 61 }));
   assert.notEqual(segmentKey(base), segmentKey({ ...base, motion: 'pan-left' }));
   assert.notEqual(segmentKey(base), segmentKey({ ...base, transition: 'fade' }));
+  assert.notEqual(segmentKey(base), segmentKey({ ...base, timebase: { numerator: 1, denominator: 60 }, durationSeconds: 1 }));
 });
 
 test('required media failure outranks advisory findings and human approval', () => {

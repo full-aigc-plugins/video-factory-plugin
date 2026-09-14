@@ -89,7 +89,9 @@
         "hashVerified": {"type": "boolean"},
         "decodeOk": {"type": "boolean"},
         "provenanceOk": {"type": "boolean"},
-        "timelineOk": {"type": "boolean"}
+        "timelineOk": {"type": "boolean"},
+        "descriptorKey": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "bindingKey": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
       }
     },
     "mediaScores": {
