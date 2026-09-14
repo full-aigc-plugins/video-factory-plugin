@@ -42,3 +42,14 @@ npm test
 - Node 18：PASS
 - Node 24：PASS
 - 每个 job 均安装并验证 FFmpeg/ffprobe、执行完整测试、复核上游目录无差异
+
+## 发布与 Marketplace
+
+- main 发布提交：`2ea36056980eb6cebac2ae97d126d064577ac4e6`
+- main CI：`34822366767`，Node 18/24 均 PASS
+- GitHub Release：`v0.1.0`，非 draft、非 prerelease
+- Marketplace：`partme-ai-video-factory`
+- 已安装插件：`codex-video-factory@partme-ai-video-factory`，版本 `0.1.0`，enabled
+- 缓存路径：`/Users/wandl/.codex/plugins/cache/partme-ai-video-factory/codex-video-factory/0.1.0`
+- 源码/缓存校验：96/96 个受跟踪文件 SHA-256 一致，0 missing，0 mismatch
+- 缓存 CLI probe：FFmpeg、ffprobe、Chrome 可用；原生视频生成保持 `NOT_RUN`

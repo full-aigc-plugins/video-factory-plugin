@@ -129,8 +129,8 @@ flowchart LR
 - [x] Factory Skills TRACE 确定性评测已记录，未对低分做美化。
 - [x] 功能分支已同步远端，本地/tracking/remote SHA 一致。
 - [x] 已本地集成 main。
-- [ ] 推送 main 和发布标签。
-- [ ] 从远端 Marketplace 新缓存安装并核对源码/缓存哈希。
+- [x] main 已推送，`v0.1.0` Release 已发布。
+- [x] 从远端 Marketplace 新缓存安装并核对源码/缓存哈希。
 - [x] 用户人工连续播放同步审阅版和终版并确认。
 - [ ] 用户人工连续播放六图故事粗剪并确认。
 
@@ -143,9 +143,9 @@ flowchart LR
 - [x] 活跃代码无外部视频 API、API Key、shell:true、网络输入或自动重试。
 - [x] 功能分支三方 SHA（本地、tracking、remote）一致。
 - [x] GitHub Actions Node 18/24 真实媒体 CI 通过。
-- [ ] 主分支发布后三方 SHA 一致。
+- [x] 主分支发布后三方 SHA 一致。
 - [x] 两条独立代码审查通道返回证据：代码/安全 APPROVE，架构 WATCH，无合并阻断。
-- [ ] 新 Marketplace 缓存安装与新会话发现通过。
+- [x] 新 Marketplace 缓存安装、启用和 CLI 发现通过。
 - [x] 同步审阅版与终版人工播放结果由用户明确记录。
 - [ ] 六图故事粗剪人工播放结果由用户明确记录。
 
