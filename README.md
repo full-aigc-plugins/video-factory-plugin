@@ -1,5 +1,7 @@
 # Codex Video Factory
 
+![Codex × Video Factory — Turn footage into review-ready films](assets/video-factory-hero.png)
+
 Codex Video Factory is a local-first Codex plugin for shot analysis, automatic edit planning, rough cuts,
 synchronized review videos, final composition, recovery, and media quality receipts. The repository keeps
 the canonical `video` spelling across repository, plugin, package, CLI, and Skill identifiers.

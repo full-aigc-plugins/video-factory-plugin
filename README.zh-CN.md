@@ -1,5 +1,7 @@
 # Codex Video Factory
 
+![Codex × Video Factory — 将素材转化为可审阅影片](assets/video-factory-hero.png)
+
 Codex Video Factory 是本地优先的 Codex 视频工厂插件，负责已有视频拉片、自动剪辑规划、粗剪、同步审阅视频、终版合成、中断恢复和媒体质量回执。仓库、插件、包、CLI 与 Skill 标识统一使用规范的 `video` 拼写。
 
 ## 状态与版本
