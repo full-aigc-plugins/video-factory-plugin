@@ -1,0 +1,18 @@
+{
+  "name": "video-factory",
+  "displayName": "Video Factory",
+  "displayName_i18n": { "en": "Video Factory", "zh-CN": "视频工厂" },
+  "version": "0.1.0",
+  "description": "Codex-driven automatic editing, video composition, synchronized review, recovery, and verified media receipts.",
+  "description_i18n": {
+    "en": "Automatic editing, video composition, synchronized review, recovery, and verified media receipts.",
+    "zh-CN": "自动剪辑与视频合成：时间线装配、同步审阅、断点恢复与媒体校验回执。"
+  },
+  "author": { "name": "Full Stack Skills / PartMe.AI", "url": "https://github.com/partme-ai" },
+  "homepage": "https://github.com/partme-ai/codex-video-factory-plugin",
+  "repository": "https://github.com/partme-ai/codex-video-factory-plugin",
+  "license": "Apache-2.0",
+  "keywords": ["video", "editing", "composition", "receipts"],
+  "skills": "skills",
+  "commands": "commands"
+}

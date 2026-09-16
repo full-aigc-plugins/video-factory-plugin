@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateSchemaInstance } from './schema-lite.mjs';
+import { resolveEditDecision } from './edit-decision.mjs';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const readSchema = (name) => JSON.parse(readFileSync(join(ROOT, 'schemas', `${name}.schema.json`), 'utf8'));
@@ -26,6 +27,7 @@ export function validateVideoPlan(plan) {
     ...validateSchemaInstance(EDIT_DECISION_SCHEMA, plan.editDecision, '$.editDecision'),
   ];
   if (issues.length) throw new Error(`${issues[0].path}: ${issues[0].message}`);
+  if (plan.editDecision) resolveEditDecision(plan.editDecision);
   if (!Number.isInteger(plan.round) || plan.round < 1) throw new Error('invalid round');
   if (!plan.editDecision || !Array.isArray(plan.assets) || !plan.assets.length) throw new Error('plan requires editDecision and assets');
   const { width, height, fps } = plan.output ?? {};

@@ -20,6 +20,105 @@ export function validateEditDecision(decision, assetDurations = {}) {
   return decision;
 }
 
+const semanticId = (value, kind) => {
+  if (!/^[a-z][a-z0-9-]{0,39}$/.test(value)) throw new Error(`invalid ${kind} id: ${value}`);
+  return value;
+};
+
+function assertSemantics(decision) {
+  const words = decision.speech?.words ?? [];
+  const wordIndex = new Map();
+  let previousEnd = -1;
+  for (const word of words) {
+    if (wordIndex.has(word.id)) throw new Error(`duplicate word id: ${word.id}`);
+    if (word.endTicks <= word.startTicks) throw new Error(`invalid word span: ${word.id}`);
+    if (word.startTicks < previousEnd) throw new Error(`speech words must be sorted and non-overlapping: ${word.id}`);
+    previousEnd = word.endTicks;
+    wordIndex.set(word.id, word);
+  }
+  const moments = new Map();
+  for (const moment of decision.moments ?? []) {
+    semanticId(moment.id, 'moment');
+    if (moments.has(moment.id)) throw new Error(`duplicate moment id: ${moment.id}`);
+    if (!wordIndex.has(moment.wordId)) throw new Error(`moment ${moment.id} references unknown word: ${moment.wordId}`);
+    moments.set(moment.id, moment);
+  }
+  const selections = new Map();
+  for (const selection of decision.selections ?? []) {
+    semanticId(selection.id, 'selection');
+    if (selections.has(selection.id)) throw new Error(`duplicate selection id: ${selection.id}`);
+    for (const field of ['startWordId', 'endWordId']) {
+      if (!wordIndex.has(selection[field])) throw new Error(`selection ${selection.id} references unknown word: ${selection[field]}`);
+    }
+    selections.set(selection.id, selection);
+  }
+  return { words, wordIndex, moments, selections };
+}
+
+function resolveAnchorTicks(anchor, semantics) {
+  const { wordIndex, moments, selections } = semantics;
+  const wordTicks = (wordId, affinity) => {
+    const word = wordIndex.get(wordId);
+    return affinity === 'end' ? word.endTicks : word.startTicks;
+  };
+  const at = anchor.at ?? '';
+  const offset = anchor.offsetTicks ?? 0;
+  if (at === 'speech:start') return (semantics.words[0]?.startTicks ?? 0) + offset;
+  if (at === 'speech:end') return (semantics.words.at(-1)?.endTicks ?? 0) + offset;
+  if (at.startsWith('tick:')) return Number(at.slice(5)) + offset;
+  if (at.startsWith('moment:')) {
+    const moment = moments.get(at.slice(7));
+    if (!moment) throw new Error(`anchor references unknown moment: ${at.slice(7)}`);
+    return wordTicks(moment.wordId, moment.affinity) + offset;
+  }
+  if (at.startsWith('selection:')) {
+    const [prefix, id, boundary] = at.split(':');
+    if (!['start', 'end'].includes(boundary)) throw new Error(`invalid anchor form: ${anchor.at}`);
+    const selection = selections.get(id);
+    if (!selection) throw new Error(`anchor references unknown selection: ${id}`);
+    return boundary === 'start'
+      ? wordTicks(selection.startWordId, selection.startAffinity) + offset
+      : wordTicks(selection.endWordId, selection.endAffinity) + offset;
+  }
+  throw new Error(`invalid anchor form: ${anchor.at}`);
+}
+
+/**
+ * Semantic time resolution (borrowed from Hypit): moments and selections name word-boundary
+ * events; anchored clips take their timeline position from those events, so a re-transcribed
+ * delivery moves the cut with the words instead of breaking the plan.
+ *
+ * Returns the literal 1.0.0-shaped decision the compiler consumes, sorted into timeline order,
+ * plus the anchor report. Pure: never mutates the input. v1 decisions pass through unchanged.
+ */
+export function resolveEditDecision(decision) {
+  const clips = decision.clips ?? [];
+  const hasAnchors = clips.some((clip) => clip.anchor !== undefined);
+  if (!hasAnchors && decision.speech === undefined && decision.moments === undefined && decision.selections === undefined) {
+    return { decision, resolved: false, anchors: [] };
+  }
+  if (!decision.speech) throw new Error('anchored clips require speech words');
+  const semantics = assertSemantics(decision);
+  const anchors = [];
+  const resolved = clips.map((clip) => {
+    if (clip.anchor === undefined) return { ...clip };
+    const timelineInTicks = resolveAnchorTicks(clip.anchor, semantics);
+    anchors.push({ clipId: clip.id, at: clip.anchor.at, offsetTicks: clip.anchor.offsetTicks ?? 0, timelineInTicks });
+    const { anchor: _anchor, ...literal } = clip;
+    return { ...literal, timelineInTicks };
+  }).sort((left, right) => left.timelineInTicks - right.timelineInTicks);
+  const literal = {
+    schemaVersion: '1.0.0',
+    id: decision.id,
+    revision: decision.revision,
+    timebase: decision.timebase,
+    clips: resolved,
+  };
+  const unbounded = Object.fromEntries(resolved.map((clip) => [clip.assetId, Number.MAX_SAFE_INTEGER]));
+  validateEditDecision(literal, unbounded);
+  return { decision: literal, resolved: true, anchors };
+}
+
 export function diffEditDecision(previous, next) {
   const old = new Map((previous.clips ?? []).map((clip) => [clip.id, clip]));
   const changed = (next.clips ?? []).filter((clip) => JSON.stringify(old.get(clip.id)) !== JSON.stringify(clip)).map((clip) => clip.id);

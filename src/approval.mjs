@@ -1,5 +1,5 @@
 import { canonicalHash } from './plan.mjs';
-import { editDurationSeconds } from './edit-decision.mjs';
+import { editDurationSeconds, resolveEditDecision } from './edit-decision.mjs';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,16 +10,17 @@ const APPROVAL_SCHEMA = JSON.parse(readFileSync(join(ROOT, 'schemas', 'video_app
 
 export function quotePlan(plan, stage, revision) {
   if (!['rough', 'final'].includes(stage)) throw new Error('stage must be rough or final');
-  const totalSeconds = editDurationSeconds(plan.editDecision);
+  const edit = resolveEditDecision(plan.editDecision).decision;
+  const totalSeconds = editDurationSeconds(edit);
   const outputPixels = plan.output.width * plan.output.height;
   return {
     schemaVersion: '1.0.0',
     stage,
     revision,
     planHash: canonicalHash(plan),
-    editHash: canonicalHash(plan.editDecision),
+    editHash: canonicalHash(edit),
     round: plan.round,
-    clips: plan.editDecision.clips?.length ?? 0,
+    clips: edit.clips?.length ?? 0,
     totalSeconds,
     outputPixels,
     estimatedTemporaryBytes: Math.ceil(totalSeconds * outputPixels * plan.output.fps * 0.08),

@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { verifyApproval, quotePlan } from './approval.mjs';
 import { assembleVideo } from './assembler.mjs';
-import { analyzeEditPolicy, validateEditDecision } from './edit-decision.mjs';
+import { analyzeEditPolicy, resolveEditDecision, validateEditDecision } from './edit-decision.mjs';
 import { effectiveAssemblyDuration, outputProfile, segmentKey } from './ffmpeg-compiler.mjs';
 import { renderFinal } from './final-renderer.mjs';
 import { failSegment, markSegment, newJob, pendingSegments, readLedger, recordHumanDecision, transition, writeLedger } from './job-ledger.mjs';
@@ -50,16 +50,17 @@ export async function runApproved({ planPath, approvalPath, ledgerPath, inputRoo
   }
   const assets = await registerAssets(plan.assets, inputRoot);
   const durations = Object.fromEntries(plan.assets.map((asset) => [asset.id, asset.durationTicks ?? Number.MAX_SAFE_INTEGER]));
-  validateEditDecision(plan.editDecision, durations);
+  const edit = resolveEditDecision(plan.editDecision).decision;
+  validateEditDecision(edit, durations);
   mkdirSync(outputRoot, { recursive: true });
-  let job = existsSync(ledgerPath) ? readLedger(ledgerPath) : newJob({ id: plan.id, planHash: quote.planHash, stage, shotIds: plan.editDecision.clips.map((clip) => clip.id) });
+  let job = existsSync(ledgerPath) ? readLedger(ledgerPath) : newJob({ id: plan.id, planHash: quote.planHash, stage, shotIds: edit.clips.map((clip) => clip.id) });
   if (job.planHash !== quote.planHash || job.stage !== stage) throw new Error('ledger does not match approved plan');
   if (job.segments.some((segment) => segment.state === 'Failed')) throw new Error('failed segment requires a new round');
   if (['AwaitingApproval', 'Partial', 'Blocked', 'Collecting', 'Verifying'].includes(job.state)) job = transition(job, 'Running', 'approved execution or checkpoint recovery');
   writeLedger(ledgerPath, job);
   const profile = outputProfile(stage, plan.output);
   const secondsPerTick = plan.editDecision.timebase.numerator / plan.editDecision.timebase.denominator;
-  for (const clip of plan.editDecision.clips) {
+  for (const clip of edit.clips) {
     if (!pendingSegments(job).includes(clip.id)) continue;
     const asset = assets[clip.assetId];
     const descriptor = { rendererVersion: 1, id: clip.id, kind: asset.kind, assetHash: asset.sha256, timebase: plan.editDecision.timebase, sourceInTicks: clip.sourceInTicks, sourceOutTicks: clip.sourceOutTicks, sourceInSeconds: clip.sourceInTicks * secondsPerTick, durationSeconds: (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick, motion: clip.motion ?? 'static', transition: clip.transition, gainDb: clip.gainDb, profile };

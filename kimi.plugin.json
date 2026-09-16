@@ -1,0 +1,22 @@
+{
+  "name": "video-factory",
+  "version": "0.1.0",
+  "description": "Automatic editing, video composition, synchronized review, recovery, and verified media receipts.",
+  "author": { "name": "Full Stack Skills / PartMe.AI" },
+  "homepage": "https://github.com/partme-ai/codex-video-factory-plugin",
+  "license": "Apache-2.0",
+  "keywords": ["video", "editing", "composition"],
+  "interface": {
+    "displayName": "Video Factory",
+    "shortDescription": "Automatic editing and verified video composition",
+    "longDescription": "Automatic editing for coding agents: timeline assembly, video composition, synchronized review, recovery, and verified media receipts.",
+    "developerName": "Full Stack Skills / PartMe.AI",
+    "websiteURL": "https://github.com/partme-ai/codex-video-factory-plugin"
+  },
+  "skills": "./skills/",
+  "commands": "./commands/",
+  "hooks": [
+    { "event": "SessionStart", "command": "python3 ./hooks/env_check.py", "timeout": 30 },
+    { "event": "UserPromptSubmit", "command": "python3 ./hooks/check_factory_intent.py", "timeout": 15 }
+  ]
+}

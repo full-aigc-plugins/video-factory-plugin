@@ -23,7 +23,9 @@ test('public schemas are closed Draft 2020-12 documents using enforced keywords'
   for (const name of ['asset_manifest', 'reelbench_evidence', 'edit_decision', 'video_plan', 'video_approval', 'video_job', 'media_artifact_receipt', 'media_scores']) {
     const document = schema(name);
     assert.equal(document.$schema, 'https://json-schema.org/draft/2020-12/schema');
-    assert.equal(document.additionalProperties, false);
+    for (const variant of document.$defs ? Object.values(document.$defs) : [document]) {
+      assert.equal(variant.additionalProperties, false);
+    }
     assert.doesNotThrow(() => assertSupportedSchema(document));
   }
 });

@@ -26,8 +26,12 @@ export function validateSchemaInstance(schema, value, path = '$', root = schema)
     return target ? validateSchemaInstance(target, value, path, root) : [{ path, message: `unresolved reference ${schema.$ref}` }];
   }
   if (schema.oneOf) {
-    const matches = schema.oneOf.map((candidate) => validateSchemaInstance(candidate, value, path, root)).filter((candidate) => candidate.length === 0);
-    if (matches.length !== 1) fail('must match exactly one oneOf branch');
+    const attempts = schema.oneOf.map((candidate) => validateSchemaInstance(candidate, value, path, root));
+    const matches = attempts.filter((candidate) => candidate.length === 0);
+    if (matches.length !== 1) {
+      const closest = attempts.slice().sort((left, right) => left.length - right.length)[0];
+      fail(`must match exactly one oneOf branch (${closest[0]?.message ?? 'no detail'})`);
+    }
     return issues;
   }
   if (schema.const !== undefined && value !== schema.const) fail(`must equal ${JSON.stringify(schema.const)}`);
