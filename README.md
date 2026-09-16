@@ -4,7 +4,7 @@
 
 > Local-first shot analysis, approved edit planning, deterministic FFmpeg composition, and verified media receipts — driven from Codex.
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/partme-ai/codex-video-factory-plugin)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/partme-ai/partme-video-factory)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
 [English](README.md) | [简体中文](README.zh-CN.md) · [Install](#installation) · [Quick start](#quick-start) · [Commands](#command-contract) · [Troubleshooting](#troubleshooting)
@@ -130,7 +130,7 @@ CI exercises Node 18 and Node 24. Any platform with Node and FFmpeg works; the r
 ### From the plugin marketplace
 
 ```bash
-codex plugin marketplace add partme-ai/codex-video-factory-plugin --ref main
+codex plugin marketplace add partme-ai/partme-video-factory --ref main
 codex plugin add codex-video-factory@partme-ai-video-factory
 ```
 
@@ -139,8 +139,8 @@ Restart Codex or the ChatGPT desktop app, then open a new task so the Skills loa
 ### From source
 
 ```bash
-git clone https://github.com/partme-ai/codex-video-factory-plugin.git
-cd codex-video-factory-plugin
+git clone https://github.com/partme-ai/partme-video-factory.git
+cd partme-video-factory
 bin/video-factory probe
 ```
 
@@ -290,7 +290,7 @@ Evidence recorded in this repository:
 ## Project structure
 
 ```text
-codex-video-factory-plugin/
+partme-video-factory/
 ├── .codex-plugin/plugin.json   # plugin identity and presentation metadata
 ├── .agents/plugins/marketplace.json
 ├── bin/video-factory           # CLI entry point
@@ -303,14 +303,14 @@ codex-video-factory-plugin/
 ## Deep links
 
 - [Architecture](docs/Codex-Video-Factory-Plugin-Architecture.md) · [架构文档](docs/Codex-Video-Factory-Plugin-Architecture.zh_CN.md)
-- [Architecture and design specification](docs/superpowers/specs/2026-09-14-codex-video-factory-plugin-design.md)
+- [Architecture and design specification](docs/superpowers/specs/2026-09-14-partme-video-factory-design.md)
 - [Implementation plan](docs/superpowers/plans/2026-09-14-local-composition-v0.1.0.md)
 - [CLI recipes (中文)](docs/guides/current-cli-recipes.zh-CN.md)
 - [Third-party notices](THIRD_PARTY_NOTICES.md)
 
 ## Contributing and support
 
-Open functional issues at <https://github.com/partme-ai/codex-video-factory-plugin/issues>. Before proposing a change, state the target Node version and whether it alters the approval binding or the ledger format, and include the affected tests.
+Open functional issues at <https://github.com/partme-ai/partme-video-factory/issues>. Before proposing a change, state the target Node version and whether it alters the approval binding or the ledger format, and include the affected tests.
 
 ## License
 

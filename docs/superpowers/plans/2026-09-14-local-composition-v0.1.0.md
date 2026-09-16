@@ -2,7 +2,7 @@
 
 状态：实施与发布门禁阶段
 
-规格事实源：`docs/superpowers/specs/2026-09-14-codex-video-factory-plugin-design.md`
+规格事实源：`docs/superpowers/specs/2026-09-14-partme-video-factory-design.md`
 
 方法：Superpowers executing-plans、TDD、独立提交、完成前验证
 
@@ -32,7 +32,7 @@ flowchart LR
 
 ## 全局约束
 
-- 项目标识统一使用 `codex-video-factory-plugin`、`codex-video-factory` 和 `video-factory`。
+- 项目标识统一使用 `partme-video-factory`、`codex-video-factory` 和 `video-factory`。
 - ReelBench 固定提交 `75520c7b32ab5af8b22c5e4f79705efbbc0d8e07`；27 个文件禁止修改。
 - Node.js 18+、FFmpeg/ffprobe 必需；Chrome 只对同步审阅必需；零 npm 运行依赖。
 - 只接受授权根内普通本地文件，拒绝 URL、符号链接逃逸、特殊文件和任意 filter graph。

@@ -4,7 +4,7 @@
 
 > 本地优先的拉片分析、经批准的剪辑规划、确定性的 FFmpeg 合成，以及可核验的媒体回执——全部由 Codex 驱动。
 
-[![版本](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/partme-ai/codex-video-factory-plugin)
+[![版本](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/partme-ai/partme-video-factory)
 [![许可证](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
 [English](README.md) | [简体中文](README.zh-CN.md) · [安装](#安装) · [快速开始](#快速开始) · [命令契约](#命令契约) · [故障排查](#故障排查)
@@ -130,7 +130,7 @@ CI 覆盖 Node 18 与 Node 24。任何具备 Node 与 FFmpeg 的平台都可用�
 ### 从插件市场安装
 
 ```bash
-codex plugin marketplace add partme-ai/codex-video-factory-plugin --ref main
+codex plugin marketplace add partme-ai/partme-video-factory --ref main
 codex plugin add codex-video-factory@partme-ai-video-factory
 ```
 
@@ -139,8 +139,8 @@ codex plugin add codex-video-factory@partme-ai-video-factory
 ### 从源码安装
 
 ```bash
-git clone https://github.com/partme-ai/codex-video-factory-plugin.git
-cd codex-video-factory-plugin
+git clone https://github.com/partme-ai/partme-video-factory.git
+cd partme-video-factory
 bin/video-factory probe
 ```
 
@@ -290,7 +290,7 @@ node --test tests/*.test.mjs
 ## 项目结构
 
 ```text
-codex-video-factory-plugin/
+partme-video-factory/
 ├── .codex-plugin/plugin.json   # 插件身份与展示元数据
 ├── .agents/plugins/marketplace.json
 ├── bin/video-factory           # CLI 入口
@@ -303,14 +303,14 @@ codex-video-factory-plugin/
 ## 深入文档
 
 - [Architecture](docs/Codex-Video-Factory-Plugin-Architecture.md) · [架构文档](docs/Codex-Video-Factory-Plugin-Architecture.zh_CN.md)
-- [架构与设计规格](docs/superpowers/specs/2026-09-14-codex-video-factory-plugin-design.md)
+- [架构与设计规格](docs/superpowers/specs/2026-09-14-partme-video-factory-design.md)
 - [实施计划](docs/superpowers/plans/2026-09-14-local-composition-v0.1.0.md)
 - [CLI 实操手册（中文）](docs/guides/current-cli-recipes.zh-CN.md)
 - [第三方声明](THIRD_PARTY_NOTICES.md)
 
 ## 贡献与支持
 
-功能问题请提交到 <https://github.com/partme-ai/codex-video-factory-plugin/issues>。提交变更前，请说明目标 Node 版本、是否改动批准绑定或台账格式，并附上受影响的测试。
+功能问题请提交到 <https://github.com/partme-ai/partme-video-factory/issues>。提交变更前，请说明目标 Node 版本、是否改动批准绑定或台账格式，并附上受影响的测试。
 
 ## 许可证
 

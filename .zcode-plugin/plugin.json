@@ -9,8 +9,8 @@
     "zh-CN": "自动剪辑与视频合成：时间线装配、同步审阅、断点恢复与媒体校验回执。"
   },
   "author": { "name": "Full Stack Skills / PartMe.AI", "url": "https://github.com/partme-ai" },
-  "homepage": "https://github.com/partme-ai/codex-video-factory-plugin",
-  "repository": "https://github.com/partme-ai/codex-video-factory-plugin",
+  "homepage": "https://github.com/partme-ai/partme-video-factory",
+  "repository": "https://github.com/partme-ai/partme-video-factory",
   "license": "Apache-2.0",
   "keywords": ["video", "editing", "composition", "receipts"],
   "skills": "skills",

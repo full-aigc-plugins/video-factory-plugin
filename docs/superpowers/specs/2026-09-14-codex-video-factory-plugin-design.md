@@ -8,7 +8,7 @@
 
 ## 1. 产品定义
 
-`codex-video-factory-plugin` 是 Codex 驱动的视频生成编排、自动剪辑、视频合成与成片质量工厂。
+`partme-video-factory` 是 Codex 驱动的视频生成编排、自动剪辑、视频合成与成片质量工厂。
 它接收剪辑目标和授权素材，通过拉片生成证据，由 Codex 形成 EditDecision，再生成粗剪、
 同步审阅版、终版和媒体回执。
 
@@ -32,7 +32,7 @@
 | 图片生成与图片回执 | `codex-image-factory-plugin` | 消费其已批准图片产物 |
 | Blender 场景、相机、动画和渲染 | `codex-blender-plugin` | 消费其图片序列或动画视频 |
 | 剧本、导演方案和分镜 | 专业创作插件 | 作为 Video Plan 的上游输入 |
-| 视频制作、媒体核验和恢复 | `codex-video-factory-plugin` | 本插件唯一核心职责 |
+| 视频制作、媒体核验和恢复 | `partme-video-factory` | 本插件唯一核心职责 |
 | 外部视频供应商 | 独立供应商插件 | 首版不接入，也不由本插件持有凭据 |
 
 本插件没有图形工作台、项目数据库、通用聊天入口、Blender 控制器或图片生成器。

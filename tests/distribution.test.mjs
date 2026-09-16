@@ -35,7 +35,7 @@ test('repository marketplace points at the public main branch', () => {
   assert.equal(market.name, 'partme-ai-video-factory');
   assert.deepEqual(market.plugins[0].source, {
     source: 'url',
-    url: 'https://github.com/partme-ai/codex-video-factory-plugin.git',
+    url: 'https://github.com/partme-ai/partme-video-factory.git',
     ref: 'main',
   });
 });
