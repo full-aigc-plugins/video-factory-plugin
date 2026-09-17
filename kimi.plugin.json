@@ -1,14 +1,20 @@
 {
   "name": "video-factory",
   "version": "0.1.0",
-  "description": "Automatic editing, video composition, synchronized review, recovery, and verified media receipts.",
-  "author": { "name": "Full Stack Skills / PartMe.AI" },
+  "description": "Automatic video editing, composition, synchronized review, recovery, and verified media receipts.",
+  "author": {
+    "name": "Full Stack Skills / PartMe.AI"
+  },
   "homepage": "https://github.com/partme-ai/partme-video-factory",
   "license": "Apache-2.0",
-  "keywords": ["video", "editing", "composition"],
+  "keywords": [
+    "video",
+    "editing",
+    "composition"
+  ],
   "interface": {
     "displayName": "Video Factory",
-    "shortDescription": "Automatic editing and verified video composition",
+    "shortDescription": "Edit, compose, review, and verify videos",
     "longDescription": "Automatic editing for coding agents: timeline assembly, video composition, synchronized review, recovery, and verified media receipts.",
     "developerName": "Full Stack Skills / PartMe.AI",
     "websiteURL": "https://github.com/partme-ai/partme-video-factory"
@@ -16,7 +22,15 @@
   "skills": "./skills/",
   "commands": "./commands/",
   "hooks": [
-    { "event": "SessionStart", "command": "python3 ./hooks/env_check.py", "timeout": 30 },
-    { "event": "UserPromptSubmit", "command": "python3 ./hooks/check_factory_intent.py", "timeout": 15 }
+    {
+      "event": "SessionStart",
+      "command": "python3 ./hooks/env_check.py",
+      "timeout": 30
+    },
+    {
+      "event": "UserPromptSubmit",
+      "command": "python3 ./hooks/check_factory_intent.py",
+      "timeout": 15
+    }
   ]
 }

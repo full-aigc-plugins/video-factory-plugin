@@ -15,7 +15,7 @@
 
 ## 1. Executive summary
 
-`codex-video-factory` turns existing footage into an approved, verifiable edit. Codex analyzes shots, proposes an edit decision, asks for approval per stage, renders through local FFmpeg, and records a receipt for every output file. There is no cloud service, no API key, and no vendor upload.
+`video-factory` turns existing footage into an approved, verifiable edit. Codex analyzes shots, proposes an edit decision, asks for approval per stage, renders through local FFmpeg, and records a receipt for every output file. There is no cloud service, no API key, and no vendor upload.
 
 The architecture exists to make three guarantees enforceable: an edit cannot be reproduced from a chat log, so it is a document; a render cannot be trusted from an exit code, so it is verified; and a long render cannot be restarted from zero, so it resumes.
 

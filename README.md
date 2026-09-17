@@ -11,7 +11,7 @@
 
 ## Positioning
 
-`codex-video-factory` turns existing footage into an approved, verifiable edit. Codex analyzes shots, proposes an edit decision, asks for your approval per stage, renders through local FFmpeg, and records a receipt for every output file. There is no cloud service, no API key, and no vendor upload.
+`video-factory` turns existing footage into an approved, verifiable edit. Codex analyzes shots, proposes an edit decision, asks for your approval per stage, renders through local FFmpeg, and records a receipt for every output file. There is no cloud service, no API key, and no vendor upload.
 
 The repository keeps the canonical `video` spelling across repository, plugin, package, CLI, and Skill identifiers.
 
@@ -37,7 +37,7 @@ Footage + intent
       │
       ▼
 ┌──────────────────────────────────────────────────────────┐
-│ codex-video-factory                                      │
+│ video-factory                                      │
 │  ① analyze       probe media, cut points, shot semantics │
 │  ② plan          validate a closed EditDecision          │
 │  ③ quote         enumerate work and bind the approval    │
@@ -52,7 +52,7 @@ Rough cut / final cut (H.264 + AAC MP4) + receipts
 
 | Property | Value |
 |---|---|
-| Plugin ID | `codex-video-factory` |
+| Plugin ID | `video-factory` |
 | Host | Codex CLI or ChatGPT desktop app |
 | Current version | `0.1.0` |
 | Plugin manifest | `.codex-plugin/plugin.json` |
@@ -131,7 +131,7 @@ CI exercises Node 18 and Node 24. Any platform with Node and FFmpeg works; the r
 
 ```bash
 codex plugin marketplace add partme-ai/partme-video-factory --ref main
-codex plugin add codex-video-factory@partme-ai-video-factory
+codex plugin add video-factory@partme-ai-video-factory
 ```
 
 Restart Codex or the ChatGPT desktop app, then open a new task so the Skills load.
@@ -155,7 +155,7 @@ codex plugin list
 Expected entry:
 
 ```text
-codex-video-factory@partme-ai-video-factory  installed, enabled
+video-factory@partme-ai-video-factory  installed, enabled
 ```
 
 Then confirm the local runtime:

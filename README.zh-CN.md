@@ -11,7 +11,7 @@
 
 ## 项目定位
 
-`codex-video-factory` 把已有素材变成一次经批准、可核验的剪辑。Codex 先分析镜头，再提出剪辑决策，按阶段征求你的批准，通过本地 FFmpeg 渲染，并为每个输出文件生成回执。全程没有云服务、没有 API Key、也不做供应商上传。
+`video-factory` 把已有素材变成一次经批准、可核验的剪辑。Codex 先分析镜头，再提出剪辑决策，按阶段征求你的批准，通过本地 FFmpeg 渲染，并为每个输出文件生成回执。全程没有云服务、没有 API Key、也不做供应商上传。
 
 仓库、插件、包、CLI 与 Skill 标识统一使用规范的 `video` 拼写。
 
@@ -37,7 +37,7 @@
       │
       ▼
 ┌──────────────────────────────────────────────────────────┐
-│ codex-video-factory                                      │
+│ video-factory                                      │
 │  ① analyze       探测媒体、切点与镜头语义                │
 │  ② plan          校验封闭的 EditDecision                 │
 │  ③ quote         枚举工作量并绑定批准                    │
@@ -52,7 +52,7 @@
 
 | 项目属性 | 值 |
 |---|---|
-| 插件 ID | `codex-video-factory` |
+| 插件 ID | `video-factory` |
 | 宿主 | Codex CLI 或 ChatGPT 桌面应用 |
 | 当前版本 | `0.1.0` |
 | 插件清单 | `.codex-plugin/plugin.json` |
@@ -131,7 +131,7 @@ CI 覆盖 Node 18 与 Node 24。任何具备 Node 与 FFmpeg 的平台都可用�
 
 ```bash
 codex plugin marketplace add partme-ai/partme-video-factory --ref main
-codex plugin add codex-video-factory@partme-ai-video-factory
+codex plugin add video-factory@partme-ai-video-factory
 ```
 
 重启 Codex 或 ChatGPT 桌面应用，然后新建任务以加载 Skills。
@@ -155,7 +155,7 @@ codex plugin list
 预期条目：
 
 ```text
-codex-video-factory@partme-ai-video-factory  installed, enabled
+video-factory@partme-ai-video-factory  installed, enabled
 ```
 
 再确认本地运行环境：
