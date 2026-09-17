@@ -166,6 +166,31 @@ bin/video-factory probe
 
 Expected result: a JSON report for Node, FFmpeg, and ffprobe availability, plus whether the enhanced review path is usable.
 
+### China mirror (AtomGit)
+
+If GitHub is slow or unreachable, install from the AtomGit mirror instead. The
+commands are identical apart from the marketplace URL:
+
+```bash
+codex plugin marketplace add https://atomgit.com/partme-ai/partme-video-factory.git --ref main
+codex plugin add video-factory@partme-ai-video-factory
+```
+
+To install the whole partme-ai plugin catalog from the mirror in one step:
+
+```bash
+codex plugin marketplace add https://atomgit.com/partme-ai/plugins.git
+codex plugin add video-factory@partme-ai-video-factory
+```
+
+Notes:
+
+- The AtomGit source and the GitHub source share marketplace names, so adding
+  one replaces the other. Switch back with
+  `codex plugin marketplace add https://github.com/partme-ai/plugins.git`.
+- For ZCode or Kimi, clone the mirror repository and register the local
+  directory in the respective marketplace configuration.
+
 ## Quick start
 
 ### 1. Prerequisites
