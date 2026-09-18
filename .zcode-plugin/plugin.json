@@ -5,7 +5,7 @@
     "en": "Video Factory",
     "zh-CN": "视频工厂"
   },
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Automatic video editing, composition, synchronized review, recovery, and verified media receipts.",
   "description_i18n": {
     "en": "Automatic editing, video composition, synchronized review, recovery, and verified media receipts.",

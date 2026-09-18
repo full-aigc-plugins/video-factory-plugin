@@ -99,6 +99,28 @@ export async function main(argv, io = { stdout: process.stdout, stderr: process.
       const expected = { ...outputProfile(stage, plan.output), durationSeconds: effectiveAssemblyDuration(durations, transitions), requireAudio: plan.output.requireAudio };
       io.stdout.write(`${JSON.stringify(evaluateMedia({ output: expected }, receipt), null, 2)}\n`); return 0;
     }
+    if (command === 'episode-slice') {
+      // words timeline (volcengine bigmodel ASR, one JSON per line) → keep segments + SRT + cutlist.
+      const { parseWordsFile, buildCutPlan, writeEpisodeArtifacts } = await import('./slicing.mjs');
+      const words = parseWordsFile(readFileSync(resolve(argv[1]), 'utf8'));
+      const mediaPath = flag(argv, '--media', null);
+      const plan = buildCutPlan(words, {
+        silenceGapMs: Number(flag(argv, '--silence-gap-ms', 400)),
+        minSegmentMs: Number(flag(argv, '--min-segment-ms', 800)),
+        maxSegmentMs: Number(flag(argv, '--max-segment-ms', 30_000)),
+      });
+      const artifacts = writeEpisodeArtifacts(resolve(flag(argv, '--out-dir', '.')), plan, { mediaPath });
+      io.stdout.write(`${JSON.stringify({ summary: plan.summary, ...artifacts }, null, 2)}\n`); return 0;
+    }
+    if (command === 'episode-roughcut') {
+      // media + cutlist.json → one rough-cut MP4 (ffmpeg concat, copy-first).
+      const { roughCut } = await import('./rough-cut.mjs');
+      const cutlist = readJson(argv[1]);
+      const segments = cutlist.segments.map((s) => ({ startUs: s.startUs, endUs: s.endUs, durationUs: s.durationUs }));
+      const output = flag(argv, '--output', 'rough-cut.mp4');
+      const result = roughCut(cutlist.media ?? flag(argv, '--media'), segments, resolve(output), io);
+      io.stdout.write(`${JSON.stringify(result, null, 2)}\n`); return 0;
+    }
     io.stderr.write(`Unknown command: ${command}\n`); return 2;
   } catch (error) {
     io.stderr.write(`${error.message}\n`);
