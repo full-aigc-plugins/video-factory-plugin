@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const EXPECTED_SKILLS = [
   'video-episode-slicing',
+  'video-factory-harness',
   'video-factory-judge',
   'video-factory-plan',
   'video-factory-recover',
@@ -15,7 +16,7 @@ const EXPECTED_SKILLS = [
 
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 
-test('distribution exposes the approved plugin identity and eight skills', () => {
+test('distribution exposes the approved plugin identity and nine skills', () => {
   const manifest = readJson('.codex-plugin/plugin.json');
   assert.equal(manifest.name, 'video-factory');
   assert.match(manifest.version, /^0\.1\.2(?:\+[0-9A-Za-z.-]+)?$/);
