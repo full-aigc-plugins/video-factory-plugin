@@ -33,7 +33,10 @@ test('parseWordsFile tolerates blank lines', () => {
 
 test('sentence-final punctuation and silence gaps produce cut points', () => {
   const plan = buildCutPlan(sampleTimeline());
-  assert.ok(plan.segments.length >= 3, `expected >=3 segments, got ${plan.segments.length}`);
+  // utt1 (0-1820ms) | 780ms gap | utt2 (2600-4820ms) | 80ms gap (merged) → 2 segments.
+  assert.equal(plan.segments.length, 2);
+  assert.equal(plan.segments[0].text, '大家好，今天讲切片。');
+  assert.equal(plan.segments[1].text, '首先看时间轴，再看切点。好。');
   // First segment covers the opening sentence.
   assert.equal(plan.segments[0].text, '大家好，今天讲切片。');
   // Rough-cut timeline is contiguous.
