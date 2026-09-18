@@ -3,21 +3,22 @@ import { accessSync, constants, readFileSync, readdirSync, statSync } from 'node
 import test from 'node:test';
 
 const EXPECTED_SKILLS = [
-  'codex-video-factory-judge',
-  'codex-video-factory-plan',
-  'codex-video-factory-recover',
-  'codex-video-factory-run',
-  'codex-video-factory-use',
+  'video-episode-slicing',
+  'video-factory-judge',
+  'video-factory-plan',
+  'video-factory-recover',
+  'video-factory-run',
+  'video-factory-use',
   'video-shots',
   'video-sync',
 ];
 
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 
-test('distribution exposes the approved plugin identity and seven skills', () => {
+test('distribution exposes the approved plugin identity and eight skills', () => {
   const manifest = readJson('.codex-plugin/plugin.json');
-  assert.equal(manifest.name, 'codex-video-factory');
-  assert.equal(manifest.version, '0.1.0');
+  assert.equal(manifest.name, 'video-factory');
+  assert.match(manifest.version, /^0\.1\.2(?:\+[0-9A-Za-z.-]+)?$/);
   assert.equal(manifest.skills, './skills/');
   const skills = readdirSync('skills').filter((name) => statSync(`skills/${name}`).isDirectory()).sort();
   assert.deepEqual(skills, EXPECTED_SKILLS);

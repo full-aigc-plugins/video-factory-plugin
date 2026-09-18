@@ -2,15 +2,15 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import test from 'node:test';
 
-const own = ['use', 'plan', 'run', 'judge', 'recover'].map((name) => `codex-video-factory-${name}`);
+const own = ['use', 'plan', 'run', 'judge', 'recover'].map((name) => `video-factory-${name}`);
 const skillText = (name) => readFileSync(`skills/${name}/SKILL.md`, 'utf8');
 
 test('factory router assigns ReelBench and Factory intents without overlap', () => {
-  const router = skillText('codex-video-factory-use');
+  const router = skillText('video-factory-use');
   assert.match(router, /拉片用 `video-shots`/);
   assert.match(router, /同步镜头信息审阅用 `video-sync`/);
-  assert.match(router, /自动剪辑计划用 `codex-video-factory-plan`/);
-  assert.match(router, /已批准渲染用 `codex-video-factory-run`/);
+  assert.match(router, /自动剪辑计划用 `video-factory-plan`/);
+  assert.match(router, /已批准渲染用 `video-factory-run`/);
   assert.match(router, /原生生成请求在 0\.1\.0 明确 blocked/);
 });
 
