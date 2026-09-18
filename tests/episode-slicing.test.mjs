@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { buildCutPlan, parseWordsFile, toSrt } from '../src/slicing.mjs';
 
 const word = (text, start, end, utteranceEnd = end) => ({
@@ -52,11 +55,33 @@ test('srt timestamps align to the rough-cut timeline', () => {
   const srt = toSrt(plan.segments);
   assert.match(srt, /^1\n00:00:00,000 --> /);
   assert.ok(srt.includes('-->'));
-  const firstDur = plan.segments[0].durationUs;
-  const second = plan.segments[1];
-  assert.match(srt, new RegExp(`2\\n00:00:00,${String(Math.floor(firstDur / 1000) % 1000).padStart(3, '0')} --> `));
+  // Segment 1 duration = 1820ms (utterance_end of 切片。), so segment 2 starts at 00:00:01,820.
+  assert.match(srt, /2\n00:00:01,820 --> /);
 });
 
 test('empty timeline throws', () => {
   assert.throws(() => buildCutPlan([]), /empty/);
+});
+
+test('cli main episode-slice writes artifacts', async () => {
+  const { main } = await import('../src/cli.mjs');
+  const dir = mkdtempSync(join(tmpdir(), 'ep-'));
+  const wordsPath = join(dir, 'words.jsonl');
+  writeFileSync(wordsPath, [
+    JSON.stringify(word('大家好', 0, 600, 620)),
+    JSON.stringify(word('讲切片。', 600, 1_800, 1_820)),
+    JSON.stringify(word('首先', 2_600, 3_000, 3_020)),
+    JSON.stringify(word('看切点。', 3_000, 4_800, 4_820)),
+  ].join('\n'));
+  const outDir = join(dir, 'out');
+  let captured = '';
+  const code = await main(['episode-slice', wordsPath, '--out-dir', outDir], {
+    stdout: { write: (s) => { captured += s; } },
+    stderr: { write: (s) => { captured += s; } },
+  });
+  assert.equal(code, 0);
+  assert.ok(existsSync(join(outDir, 'cutlist.json')), 'cutlist missing');
+  assert.ok(existsSync(join(outDir, 'subtitles.srt')), 'srt missing');
+  const cutlist = JSON.parse(readFileSync(join(outDir, 'cutlist.json'), 'utf8'));
+  assert.equal(cutlist.summary.keptSegments, 2);
 });
