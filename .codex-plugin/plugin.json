@@ -6,8 +6,8 @@
     "name": "Full Stack Skills / PartMe.AI",
     "url": "https://github.com/partme-ai"
   },
-  "homepage": "https://github.com/partme-ai/partme-video-factory",
-  "repository": "https://github.com/partme-ai/partme-video-factory",
+  "homepage": "https://github.com/full-aigc-plugins/video-factory-plugin",
+  "repository": "https://github.com/full-aigc-plugins/video-factory-plugin",
   "license": "Apache-2.0",
   "keywords": [
     "video",
@@ -28,9 +28,9 @@
       "Read",
       "Write"
     ],
-    "websiteURL": "https://github.com/partme-ai/partme-video-factory",
-    "privacyPolicyURL": "https://github.com/partme-ai/partme-video-factory/blob/main/PRIVACY.md",
-    "termsOfServiceURL": "https://github.com/partme-ai/partme-video-factory/blob/main/TERMS.md",
+    "websiteURL": "https://github.com/full-aigc-plugins/video-factory-plugin",
+    "privacyPolicyURL": "https://github.com/full-aigc-plugins/video-factory-plugin/blob/main/PRIVACY.md",
+    "termsOfServiceURL": "https://github.com/full-aigc-plugins/video-factory-plugin/blob/main/TERMS.md",
     "defaultPrompt": [
       "Analyze this video into verified shots",
       "Create an approved rough cut from these local assets",

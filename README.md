@@ -4,7 +4,7 @@
 
 > Local-first shot analysis, approved edit planning, deterministic FFmpeg composition, and verified media receipts — driven from Codex.
 
-[![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/partme-ai/partme-video-factory)
+[![Version](https://img.shields.io/badge/version-0.1.4-blue)](https://github.com/full-aigc-plugins/video-factory-plugin/releases/tag/v0.1.4)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
 [English](README.md) | [简体中文](README.zh-CN.md) · [Install](#installation) · [Quick start](#quick-start) · [Commands](#command-contract) · [Troubleshooting](#troubleshooting)
@@ -54,7 +54,7 @@ Rough cut / final cut (H.264 + AAC MP4) + receipts
 |---|---|
 | Plugin ID | `video-factory` |
 | Host | Codex CLI or ChatGPT desktop app |
-| Current version | `0.1.0` |
+| Current version | `0.1.4` |
 | Plugin manifest | `.codex-plugin/plugin.json` |
 | MCP configuration | none — this plugin exposes a Skill-driven CLI, not an MCP server |
 | Primary language | Node.js (ESM), zero runtime dependencies |
@@ -130,7 +130,7 @@ CI exercises Node 18 and Node 24. Any platform with Node and FFmpeg works; the r
 ### From the plugin marketplace
 
 ```bash
-codex plugin marketplace add partme-ai/partme-video-factory --ref main
+codex plugin marketplace add full-aigc-plugins/video-factory-plugin --ref v0.1.4
 codex plugin add video-factory@partme-ai-video-factory
 ```
 
@@ -139,7 +139,7 @@ Restart Codex or the ChatGPT desktop app, then open a new task so the Skills loa
 ### From source
 
 ```bash
-git clone https://github.com/partme-ai/partme-video-factory.git
+git clone https://github.com/full-aigc-plugins/video-factory-plugin.git
 cd partme-video-factory
 bin/video-factory probe
 ```
@@ -335,7 +335,7 @@ partme-video-factory/
 
 ## Contributing and support
 
-Open functional issues at <https://github.com/partme-ai/partme-video-factory/issues>. Before proposing a change, state the target Node version and whether it alters the approval binding or the ledger format, and include the affected tests.
+Open functional issues at <https://github.com/full-aigc-plugins/video-factory-plugin/issues>. Before proposing a change, state the target Node version and whether it alters the approval binding or the ledger format, and include the affected tests.
 
 ## License
 

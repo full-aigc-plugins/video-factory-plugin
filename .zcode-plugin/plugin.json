@@ -15,8 +15,8 @@
     "name": "Full Stack Skills / PartMe.AI",
     "url": "https://github.com/partme-ai"
   },
-  "homepage": "https://github.com/partme-ai/partme-video-factory",
-  "repository": "https://github.com/partme-ai/partme-video-factory",
+  "homepage": "https://github.com/full-aigc-plugins/video-factory-plugin",
+  "repository": "https://github.com/full-aigc-plugins/video-factory-plugin",
   "license": "Apache-2.0",
   "keywords": [
     "video",

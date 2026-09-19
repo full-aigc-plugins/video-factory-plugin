@@ -5,7 +5,7 @@
   "author": {
     "name": "Full Stack Skills / PartMe.AI"
   },
-  "homepage": "https://github.com/partme-ai/partme-video-factory",
+  "homepage": "https://github.com/full-aigc-plugins/video-factory-plugin",
   "license": "Apache-2.0",
   "keywords": [
     "video",
@@ -17,7 +17,7 @@
     "shortDescription": "Edit, compose, review, and verify videos",
     "longDescription": "Automatic editing for coding agents: timeline assembly, video composition, synchronized review, recovery, and verified media receipts.",
     "developerName": "Full Stack Skills / PartMe.AI",
-    "websiteURL": "https://github.com/partme-ai/partme-video-factory"
+    "websiteURL": "https://github.com/full-aigc-plugins/video-factory-plugin"
   },
   "skills": "./skills/",
   "commands": "./commands/",
