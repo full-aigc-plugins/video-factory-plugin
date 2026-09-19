@@ -19,7 +19,7 @@ const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 test('distribution exposes the approved plugin identity and nine skills', () => {
   const manifest = readJson('.codex-plugin/plugin.json');
   assert.equal(manifest.name, 'video-factory');
-  assert.match(manifest.version, /^0\.1\.2(?:\+[0-9A-Za-z.-]+)?$/);
+  assert.match(manifest.version, /^0\.1\.3(?:\+[0-9A-Za-z.-]+)?$/);
   assert.equal(manifest.skills, './skills/');
   const skills = readdirSync('skills').filter((name) => statSync(`skills/${name}`).isDirectory()).sort();
   assert.deepEqual(skills, EXPECTED_SKILLS);
