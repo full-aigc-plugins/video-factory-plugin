@@ -1,4 +1,4 @@
-# Codex Video Factory 0.1.0 CLI 实操手册
+# Video Factory 0.1.0 CLI 实操手册
 
 ## 1. 能力探测
 

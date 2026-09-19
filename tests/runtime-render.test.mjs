@@ -169,7 +169,7 @@ test('approved run with missing media stops before rendering and writes asset re
   const root = mkdtempSync(join(tmpdir(), 'video-missing-'));
   const plan = {
     schemaVersion: '1.0.0', id: 'missing-job', mode: 'local_composition', round: 1,
-    assets: [{ id: 'IMG01', path: 'missing.png', sha256: 'a'.repeat(64), kind: 'image', durationTicks: 30, source: 'codex-image-factory' }],
+    assets: [{ id: 'IMG01', path: 'missing.png', sha256: 'a'.repeat(64), kind: 'image', durationTicks: 30, source: 'image-factory' }],
     editDecision: { schemaVersion: '1.0.0', id: 'E01', revision: 1, timebase: { numerator: 1, denominator: 30 }, clips: [
       { id: 'C01', assetId: 'IMG01', sourceInTicks: 0, sourceOutTicks: 30, timelineInTicks: 0, track: 0, transition: 'cut', gainDb: 0 },
     ] },
@@ -293,12 +293,12 @@ test('automatic rough cut consumes multiple real clips including a Blender publi
   }
   const userHash = await sha256File(userClip);
   const blenderHash = await sha256File(blenderClip);
-  writeFileSync(join(root, 'blender.receipt.json'), JSON.stringify({ schemaVersion: '1.0.0', source: 'codex-blender-plugin', path: 'blender.mp4', sha256: blenderHash, kind: 'video' }));
+  writeFileSync(join(root, 'blender.receipt.json'), JSON.stringify({ schemaVersion: '1.0.0', source: 'blender-design-plugin', path: 'blender.mp4', sha256: blenderHash, kind: 'video' }));
   const plan = {
     schemaVersion: '1.0.0', id: 'multiclip-job', mode: 'local_composition', round: 1,
     assets: [
       { id: 'V01', path: 'user.mp4', sha256: userHash, kind: 'video', durationTicks: 30, source: 'user' },
-      { id: 'V02', path: 'blender.mp4', sha256: blenderHash, kind: 'video', durationTicks: 30, source: 'codex-blender-plugin', receiptPath: 'blender.receipt.json' },
+      { id: 'V02', path: 'blender.mp4', sha256: blenderHash, kind: 'video', durationTicks: 30, source: 'blender-design-plugin', receiptPath: 'blender.receipt.json' },
     ],
     editDecision: { schemaVersion: '1.0.0', id: 'E01', revision: 1, timebase: { numerator: 1, denominator: 30 }, clips: [
       { id: 'C01', assetId: 'V01', sourceInTicks: 0, sourceOutTicks: 30, timelineInTicks: 0, track: 0, transition: 'cut', gainDb: 0 },
@@ -328,8 +328,8 @@ test('six-image story plan renders varied camera motion into a verified rough cu
     execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', `color=${colors[index]}:s=64x64`, '-frames:v', '1', path]);
     const sha256 = await sha256File(path);
     const receiptPath = `story-${index + 1}.receipt.json`;
-    writeFileSync(join(root, receiptPath), JSON.stringify({ schemaVersion: '1.0.0', source: 'codex-image-factory', path: `story-${index + 1}.png`, sha256, kind: 'image' }));
-    assets.push({ id: `A0${index + 1}`, path: `story-${index + 1}.png`, sha256, kind: 'image', durationTicks: 15, source: 'codex-image-factory', receiptPath });
+    writeFileSync(join(root, receiptPath), JSON.stringify({ schemaVersion: '1.0.0', source: 'image-factory', path: `story-${index + 1}.png`, sha256, kind: 'image' }));
+    assets.push({ id: `A0${index + 1}`, path: `story-${index + 1}.png`, sha256, kind: 'image', durationTicks: 15, source: 'image-factory', receiptPath });
   }
   const motions = ['static', 'zoom-in', 'pan-left', 'zoom-out', 'pan-right', 'static'];
   const clips = assets.map((asset, index) => ({ id: `C0${index + 1}`, assetId: asset.id, sourceInTicks: 0, sourceOutTicks: 15, timelineInTicks: index * 15, track: 0, transition: index % 2 ? 'fade' : 'cut', motion: motions[index], gainDb: 0 }));

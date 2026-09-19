@@ -52,7 +52,7 @@ test('video plan schema closes asset handoff and output mastering fields', () =>
   const plan = {
     schemaVersion: '1.0.0', id: 'P01', mode: 'local_composition', round: 1,
     editDecision: decision,
-    assets: [{ id: 'A01', path: 'frame.png', sha256: 'a'.repeat(64), kind: 'image', durationTicks: 60, source: 'codex-image-factory', authorizedAt: '2026-09-14T00:00:00Z' }],
+    assets: [{ id: 'A01', path: 'frame.png', sha256: 'a'.repeat(64), kind: 'image', durationTicks: 60, source: 'image-factory', authorizedAt: '2026-09-14T00:00:00Z' }],
     output: { aspect: '16:9', width: 1920, height: 1080, fps: 30, requireAudio: false },
   };
   assert.deepEqual(validateSchemaInstance(schema('video_plan'), plan), []);
@@ -61,7 +61,7 @@ test('video plan schema closes asset handoff and output mastering fields', () =>
 });
 
 test('asset manifest accepts public Image Factory and Blender receipt fields', () => {
-  const manifest = { schemaVersion: '1.0.0', assets: [{ id: 'B01', path: 'scene.mp4', sha256: 'a'.repeat(64), kind: 'video', durationTicks: 90, source: 'codex-blender-plugin', license: 'user-authorized', authorizedAt: '2026-09-14T00:00:00Z', receiptPath: 'scene.receipt.json' }] };
+  const manifest = { schemaVersion: '1.0.0', assets: [{ id: 'B01', path: 'scene.mp4', sha256: 'a'.repeat(64), kind: 'video', durationTicks: 90, source: 'blender-design-plugin', license: 'user-authorized', authorizedAt: '2026-09-14T00:00:00Z', receiptPath: 'scene.receipt.json' }] };
   assert.deepEqual(validateSchemaInstance(schema('asset_manifest'), manifest), []);
 });
 

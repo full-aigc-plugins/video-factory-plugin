@@ -1,4 +1,4 @@
-# Codex Video Factory Plugin Architecture
+# Video Factory Plugin Architecture
 
 > **Document control**
 >
@@ -11,7 +11,7 @@
 > | Runtime evidence | [docs/verification/runtime.md](verification/runtime.md) |
 > | Last structural revision | 2026-09-14 |
 
-[English](Codex-Video-Factory-Plugin-Architecture.md) | [简体中文](Codex-Video-Factory-Plugin-Architecture.zh_CN.md)
+[English](Video-Factory-Plugin-Architecture.md) | [简体中文](Video-Factory-Plugin-Architecture.zh_CN.md)
 
 ## 1. Executive summary
 

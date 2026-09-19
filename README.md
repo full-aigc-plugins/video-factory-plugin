@@ -1,4 +1,4 @@
-# Codex Video Factory
+# Video Factory
 
 ![Codex × Video Factory — Turn footage into review-ready films](assets/video-factory-hero.png)
 
@@ -327,8 +327,8 @@ partme-video-factory/
 
 ## Deep links
 
-- [Architecture](docs/Codex-Video-Factory-Plugin-Architecture.md) · [架构文档](docs/Codex-Video-Factory-Plugin-Architecture.zh_CN.md)
-- [Architecture and design specification](docs/superpowers/specs/2026-09-14-partme-video-factory-design.md)
+- [Architecture](docs/Video-Factory-Plugin-Architecture.md) · [架构文档](docs/Video-Factory-Plugin-Architecture.zh_CN.md)
+- [Architecture and design specification](docs/superpowers/specs/2026-09-14-video-factory-plugin-design.md)
 - [Implementation plan](docs/superpowers/plans/2026-09-14-local-composition-v0.1.0.md)
 - [CLI recipes (中文)](docs/guides/current-cli-recipes.zh-CN.md)
 - [Third-party notices](THIRD_PARTY_NOTICES.md)

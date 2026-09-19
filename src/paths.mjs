@@ -33,7 +33,7 @@ export async function registerAssets(assets, root) {
     const path = resolveGrantedFile(root, asset.path);
     const actual = await sha256File(path);
     if (actual !== asset.sha256) throw new Error(`asset hash mismatch: ${asset.id}`);
-    if (/^codex-(?:image-factory|blender)(?:-plugin)?$/i.test(asset.source ?? '') && !asset.receiptPath) {
+    if (/^(?:image-factory|blender-design-plugin)$/i.test(asset.source ?? '') && !asset.receiptPath) {
       throw new Error(`cross-plugin asset ${asset.id} requires receiptPath`);
     }
     let receipt;

@@ -1,4 +1,4 @@
-# Codex Video Factory 插件架构
+# Video Factory 插件架构
 
 > **文档信息**
 >
@@ -11,7 +11,7 @@
 > | 运行证据 | [docs/verification/runtime.md](verification/runtime.md) |
 > | 最近一次结构修订 | 2026-09-14 |
 
-[English](Codex-Video-Factory-Plugin-Architecture.md) | [简体中文](Codex-Video-Factory-Plugin-Architecture.zh_CN.md)
+[English](Video-Factory-Plugin-Architecture.md) | [简体中文](Video-Factory-Plugin-Architecture.zh_CN.md)
 
 ## 1. 执行摘要
 

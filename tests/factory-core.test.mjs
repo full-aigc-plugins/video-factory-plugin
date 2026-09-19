@@ -37,19 +37,19 @@ test('cross-plugin asset registration verifies the public receipt hash', async (
   const receipt = join(root, 'blender.receipt.json');
   writeFileSync(artifact, 'blender-render');
   const hash = await sha256File(artifact);
-  writeFileSync(receipt, JSON.stringify({ schemaVersion: '1.0.0', source: 'codex-blender-plugin', path: 'blender.mp4', sha256: hash, kind: 'video' }));
-  const registered = await registerAssets([{ id: 'B01', path: 'blender.mp4', sha256: hash, kind: 'video', source: 'codex-blender-plugin', receiptPath: 'blender.receipt.json' }], root);
-  assert.equal(registered.B01.receipt.source, 'codex-blender-plugin');
-  writeFileSync(receipt, JSON.stringify({ schemaVersion: '1.0.0', source: 'codex-blender-plugin', path: 'blender.mp4', sha256: 'f'.repeat(64), kind: 'video' }));
-  await assert.rejects(() => registerAssets([{ id: 'B01', path: 'blender.mp4', sha256: hash, kind: 'video', source: 'codex-blender-plugin', receiptPath: 'blender.receipt.json' }], root), /receipt hash mismatch/);
-  await assert.rejects(() => registerAssets([{ id: 'B01', path: 'blender.mp4', sha256: hash, kind: 'video', source: 'codex-blender-plugin' }], root), /requires receiptPath/);
+  writeFileSync(receipt, JSON.stringify({ schemaVersion: '1.0.0', source: 'blender-design-plugin', path: 'blender.mp4', sha256: hash, kind: 'video' }));
+  const registered = await registerAssets([{ id: 'B01', path: 'blender.mp4', sha256: hash, kind: 'video', source: 'blender-design-plugin', receiptPath: 'blender.receipt.json' }], root);
+  assert.equal(registered.B01.receipt.source, 'blender-design-plugin');
+  writeFileSync(receipt, JSON.stringify({ schemaVersion: '1.0.0', source: 'blender-design-plugin', path: 'blender.mp4', sha256: 'f'.repeat(64), kind: 'video' }));
+  await assert.rejects(() => registerAssets([{ id: 'B01', path: 'blender.mp4', sha256: hash, kind: 'video', source: 'blender-design-plugin', receiptPath: 'blender.receipt.json' }], root), /receipt hash mismatch/);
+  await assert.rejects(() => registerAssets([{ id: 'B01', path: 'blender.mp4', sha256: hash, kind: 'video', source: 'blender-design-plugin' }], root), /requires receiptPath/);
 });
 
 test('missing assets produce an atomic public handoff without probing outside the grant', () => {
   const root = mkdtempSync(join(tmpdir(), 'video-requirements-'));
   const requirements = findMissingAssetRequirements([
     { id: 'IMG01', path: 'story.png', kind: 'image' },
-    { id: 'ANIM01', path: 'scene.mp4', kind: 'video', source: 'codex-blender-plugin' },
+    { id: 'ANIM01', path: 'scene.mp4', kind: 'video', source: 'blender-design-plugin' },
   ], root);
   assert.deepEqual(requirements.map((item) => item.capability), ['image.batch', 'blender.animation']);
   const destination = join(root, 'work', 'asset-requirements.json');
