@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "dest": "skills/",
+  "skills": [
+    "video-episode-slicing",
+    "video-factory-harness",
+    "video-shots",
+    "video-sync"
+  ]
+}
