@@ -5,7 +5,14 @@ import { dirname, extname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-const BANNED = ['codex' + '-video-factory', 'Codex' + ' Video Factory', 'Codex' + '-Video-Factory', 'codex' + '-image-factory', 'codex' + '-blender-plugin'];
+const BANNED = [
+  'codex' + '-video-factory',
+  'Codex' + ' Video Factory',
+  'Codex' + '-Video-Factory',
+  'Codex' + ' × Video Factory',
+  'codex' + '-image-factory',
+  'codex' + '-blender-plugin',
+];
 const EXCLUDED = new Set(['.git', '.mimosa', '.worktrees', '.superpowers', 'artifacts', 'openspec', 'superpowers', 'verification', '__pycache__']);
 const TEXT_EXTENSIONS = new Set(['.md', '.json', '.mjs', '.js', '.yaml', '.yml']);
 

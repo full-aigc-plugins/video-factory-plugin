@@ -1,17 +1,17 @@
 # Video Factory
 
-![Codex × Video Factory — Turn footage into review-ready films](assets/video-factory-hero.png)
+![Video Factory — Turn footage into review-ready films](assets/video-factory-hero.png)
 
-> Local-first shot analysis, approved edit planning, deterministic FFmpeg composition, and verified media receipts — driven from Codex.
+> Local-first shot analysis, approved edit planning, deterministic FFmpeg composition, and verified media receipts — driven from your supported coding agent.
 
-[![Version](https://img.shields.io/badge/version-0.1.4-blue)](https://github.com/full-aigc-plugins/video-factory-plugin/releases/tag/v0.1.4)
+[![Version](https://img.shields.io/badge/version-0.1.5-blue)](https://github.com/full-aigc-plugins/video-factory-plugin/releases/tag/v0.1.5)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
 [English](README.md) | [简体中文](README.zh-CN.md) · [Install](#installation) · [Quick start](#quick-start) · [Commands](#command-contract) · [Troubleshooting](#troubleshooting)
 
 ## Positioning
 
-`video-factory` turns existing footage into an approved, verifiable edit. Codex analyzes shots, proposes an edit decision, asks for your approval per stage, renders through local FFmpeg, and records a receipt for every output file. There is no cloud service, no API key, and no vendor upload.
+`video-factory` turns existing footage into an approved, verifiable edit. The host agent analyzes shots, proposes an edit decision, asks for your approval per stage, renders through local FFmpeg, and records a receipt for every output file. There is no cloud service, no API key, and no vendor upload.
 
 The repository keeps the canonical `video` spelling across repository, plugin, package, CLI, and Skill identifiers.
 
@@ -54,7 +54,7 @@ Rough cut / final cut (H.264 + AAC MP4) + receipts
 |---|---|
 | Plugin ID | `video-factory` |
 | Host | Codex CLI or ChatGPT desktop app |
-| Current version | `0.1.4` |
+| Current version | `0.1.5` |
 | Plugin manifest | `.codex-plugin/plugin.json` |
 | MCP configuration | none — this plugin exposes a Skill-driven CLI, not an MCP server |
 | Primary language | Node.js (ESM), zero runtime dependencies |
@@ -114,7 +114,7 @@ flowchart LR
 | `src/ffmpeg-compiler.mjs` | Deterministic argv and content-addressed segment keys | Approval decisions |
 | `src/job-ledger.mjs` | Durable state, atomic writes, resume points | Render execution |
 | `src/approval.mjs` | Binding an approval to stage, plan, edit, round, and quote hashes | Cost estimation |
-| `skills/` (7) | Routing, planning, review, and recovery instructions for Codex | Runtime behaviour |
+| `skills/` (7) | Routing, planning, review, and recovery instructions for supported hosts | Runtime behaviour |
 
 ## Compatibility
 
@@ -130,7 +130,7 @@ CI exercises Node 18 and Node 24. Any platform with Node and FFmpeg works; the r
 ### From the plugin marketplace
 
 ```bash
-codex plugin marketplace add full-aigc-plugins/video-factory-plugin --ref v0.1.4
+codex plugin marketplace add full-aigc-plugins/video-factory-plugin --ref v0.1.5
 codex plugin add video-factory@partme-ai-video-factory
 ```
 

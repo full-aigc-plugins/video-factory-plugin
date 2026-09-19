@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5 - 2026-09-20
+
+- Replaced Codex-first public branding with host-neutral Video Factory identity in documentation and release artwork.
+- Retained explicit Codex, ZCode, and Kimi names only for host-specific installation and manifest contracts.
+- Added a regression gate for obsolete host-prefixed public product naming; runtime behavior is unchanged.
+
 ## 0.1.0 - 2026-09-14
 
 - Vendored original `video-shots` and `video-sync` Skills at ReelBench commit

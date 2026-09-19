@@ -1,17 +1,17 @@
 # Video Factory
 
-![Codex × Video Factory — 将素材转化为可审阅影片](assets/video-factory-hero.png)
+![Video Factory——将素材转化为可审阅影片](assets/video-factory-hero.png)
 
-> 本地优先的拉片分析、经批准的剪辑规划、确定性的 FFmpeg 合成，以及可核验的媒体回执——全部由 Codex 驱动。
+> 本地优先的拉片分析、经批准的剪辑规划、确定性的 FFmpeg 合成，以及可核验的媒体回执——由受支持的编码智能体驱动。
 
-[![版本](https://img.shields.io/badge/version-0.1.4-blue)](https://github.com/full-aigc-plugins/video-factory-plugin/releases/tag/v0.1.4)
+[![版本](https://img.shields.io/badge/version-0.1.5-blue)](https://github.com/full-aigc-plugins/video-factory-plugin/releases/tag/v0.1.5)
 [![许可证](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
 [English](README.md) | [简体中文](README.zh-CN.md) · [安装](#安装) · [快速开始](#快速开始) · [命令契约](#命令契约) · [故障排查](#故障排查)
 
 ## 项目定位
 
-`video-factory` 把已有素材变成一次经批准、可核验的剪辑。Codex 先分析镜头，再提出剪辑决策，按阶段征求你的批准，通过本地 FFmpeg 渲染，并为每个输出文件生成回执。全程没有云服务、没有 API Key、也不做供应商上传。
+`video-factory` 把已有素材变成一次经批准、可核验的剪辑。宿主智能体先分析镜头，再提出剪辑决策，按阶段征求你的批准，通过本地 FFmpeg 渲染，并为每个输出文件生成回执。全程没有云服务、没有 API Key、也不做供应商上传。
 
 仓库、插件、包、CLI 与 Skill 标识统一使用规范的 `video` 拼写。
 
@@ -54,7 +54,7 @@
 |---|---|
 | 插件 ID | `video-factory` |
 | 宿主 | Codex CLI 或 ChatGPT 桌面应用 |
-| 当前版本 | `0.1.4` |
+| 当前版本 | `0.1.5` |
 | 插件清单 | `.codex-plugin/plugin.json` |
 | MCP 配置 | 无——本插件提供由 Skill 驱动的 CLI，而非 MCP 服务器 |
 | 主要语言 | Node.js（ESM），零运行依赖 |
@@ -130,7 +130,7 @@ CI 覆盖 Node 18 与 Node 24。任何具备 Node 与 FFmpeg 的平台都可用�
 ### 从插件市场安装
 
 ```bash
-codex plugin marketplace add full-aigc-plugins/video-factory-plugin --ref v0.1.4
+codex plugin marketplace add full-aigc-plugins/video-factory-plugin --ref v0.1.5
 codex plugin add video-factory@partme-ai-video-factory
 ```
 

@@ -173,7 +173,7 @@ bin/video-factory status video-plan.json
 
 ## 10. Deployment, compatibility, and evolution
 
-The plugin ships as a Codex plugin whose runtime is a vendored CLI. There is no daemon, no service, and no network listener. CI runs the suite on Node 18 and Node 24.
+The plugin ships across Codex, ZCode, and Kimi hosts with a vendored CLI runtime. There is no daemon, no service, and no network listener. CI runs the suite on Node 18 and Node 24.
 
 | Aspect | Position |
 |---|---|
