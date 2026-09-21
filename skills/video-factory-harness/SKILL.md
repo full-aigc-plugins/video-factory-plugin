@@ -42,6 +42,34 @@ video-factory episode-roughcut <cutlist.json> --output rough-cut.mp4
    交付粗剪 MP4 + SRT + 切割清单三件套，人工精修。
 6. 交付时列出：计划摘要、阶段产物路径、验证结论、未验证项。
 
+## 3a. 语义一致性门（advisory，不软化硬门）
+
+`evaluate` 产出 14 个硬门 + 8 个 advisory 门。advisory 中 `semanticConsistency` 是
+**唯一**没有确定性生产者的门——它需要宿主 agent 的视觉能力来评分，CLI 只负责
+产出物证与校验回填。
+
+- `evaluate --target <image> --emit-evidence <dir>` 产出目标图 + 逐镜头关键帧
+  （S##a/S##b）+ `semantic-evidence.json` 清单（每条帧带 sha256）。该路径
+  不调用模型、不联网、不读凭据。
+- `evaluate --target <image> --semantic-evidence <score.json>` 接收宿主评分，
+  schema 校验（四维分数 0-3/0-3/0-3/0-1 + 可相加总分 + 每条缺口含帧标识、
+  成因、修复方向），并校验评分引用的每个帧确实存在于物证清单中（防编造）。
+- 该门**永远 advisory**：PASS 不软化硬门 FAIL，FAIL 不阻止人工批准或驳回。
+- 无 `--target` 时该门 `NOT_RUN`，行为与未启用该能力时完全一致。
+
+## 3b. 轮次纪律（何时停下，不交回自动循环）
+
+宿主 agent 在多轮迭代视觉结果时，遵守以下纪律：
+
+1. **评分必须独立上下文**：评分者不得继承实现该轮改动的 agent 的推理过程；
+   换一个干净上下文再评，防止"实现者自评自通过"。
+2. **跨轮回归要识别**：某一轮总分低于上一轮，下一轮评分应如实更低，不得
+   为抬分而背离上一轮结论。
+3. **停滞升级**：最佳分连续 2 轮未提升 ≥1 分，或同一缺口连续出现 2 次 →
+   停手，整体重审（素材、镜头职责、结构），不继续微调。
+4. **停滞收敛于人工**：架构级变更后仍停滞 → 交人类裁定，不自动循环、不
+   自动重试。
+
 ## 4. 纪律
 
 - 各 `video-factory-*` 技能（plan/run/judge/recover/use）已随插件分发：
