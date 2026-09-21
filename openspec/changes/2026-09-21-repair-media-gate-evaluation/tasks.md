@@ -48,3 +48,9 @@
 - [ ] 6.1 `duration` 门与 `timeline` 门在 orchestrator 与 `evaluate` 两条路径上计算的是同一个比较（回执时长 vs 计划推导时长，同一 0.15 容差），因此二者必然同时 PASS/FAIL。本变更保持该一致性（"两条路径判定标准不得分叉"），未消除冗余。若要区分语义（例如 `duration` 查绝对时长、`timeline` 查时间线对齐）应作为独立变更，因为它会改变既有判定形状
 - [ ] 6.2 `src/job-ledger.mjs:61` 的 `recordHumanDecision` 在人工 approved 时直接合成 `decision: 'pass'`，未检查是否存在 `NOT_RUN` 的必需门。当前正常流程不可达（`runApproved` 总会把 provenance/timeline 写成显式 boolean），因此属潜在不一致而非可利用缺口。修复需与 `evaluateMedia` 的合成规则统一，建议随 `add-revision-loop-discipline` 一并处理
 - [ ] 6.3 `semanticConsistency` 仍是唯一永为 `NOT_RUN` 的门（另 7 个 advisory 均有生产者）。它的生产者由 `2026-09-21-add-visual-semantic-gate` 交付；本变更的 stderr 已能正确把它标注为 advisory 而不误称压判定上限
+
+## Audit 2026-09-21 (this repo, completed work)
+
+- [x] Code 部分已实施并通过 81/81 JS 测试 + 18/18 Python 测试 + 6/6 OpenSpec 严格校验（`openspec validate --changes --strict`）。
+- [x] 视频工厂发布 0.2.0：插件仓与市场仓均已推送，tag `v0.2.0` 已存在并被 CDN 解析为 release-pinned 资源（HTTP 200 校验）。
+- [ ] 受管技能（5 个来自 `full-aigc-skills/video-factory-skills` @ v1.0.1）的文档与策略改动属于上游发版范围，本仓不能就地修改，须随 v1.0.2 tag 同步。`skills-check.yml` 会拒绝任何绕路改动。

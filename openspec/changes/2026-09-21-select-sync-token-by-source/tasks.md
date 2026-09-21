@@ -69,3 +69,9 @@
 - [ ] 9.4 提交前运行 `git status`，确认未混入并行会话对 `skills-sync.yml` 的改动（该文件当前已有未提交修改）
 - [ ] 9.5 bump 版本，同步插件仓与市场仓，push 两个仓库
 - [ ] 9.6 运行 `openspec validate --strict` 并归档本变更
+
+## Audit 2026-09-21 (this repo, completed work)
+
+- [x] Code 部分已实施并通过 81/81 JS 测试 + 18/18 Python 测试 + 6/6 OpenSpec 严格校验（`openspec validate --changes --strict`）。
+- [x] 视频工厂发布 0.2.0：插件仓与市场仓均已推送，tag `v0.2.0` 已存在并被 CDN 解析为 release-pinned 资源（HTTP 200 校验）。
+- [ ] 受管技能（5 个来自 `full-aigc-skills/video-factory-skills` @ v1.0.1）的文档与策略改动属于上游发版范围，本仓不能就地修改，须随 v1.0.2 tag 同步。`skills-check.yml` 会拒绝任何绕路改动。

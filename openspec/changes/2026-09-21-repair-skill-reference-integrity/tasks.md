@@ -43,11 +43,18 @@
 
 ## 7. Local regression gates (this repo)
 
-- [ ] 7.1 在 `tests/skills.test.mjs` 新增状态机断言：技能发布的状态名必须存在于 `schemas/video_job.schema.json` 的枚举中
-- [ ] 7.2 状态机断言从 schema 动态读取枚举，不硬编码状态名列表
-- [ ] 7.3 新增断言：状态机描述必须包含人工闸门状态
-- [ ] 7.4 新增漂移断言：三个共享参考文件在 5 个技能间内容摘要一致
-- [ ] 7.5 新增断言：技能文件不得含 `input(` 或 `read -p`（避免拉低 TRACE 安全性信号）
+- [x] 7.1 在 `tests/skills.test.mjs` 新增状态机断言：技能发布的状态名必须存在于 `schemas/video_job.schema.json` 的枚举中
+- [x] 7.2 状态机断言从 schema 动态读取枚举（`properties.state.enum`），不硬编码状态名列表
+- [x] 7.3 新增断言：状态机描述必须包含人工闸门状态（ReviewReady）
+- [x] 7.4 新增漂移断言：三个共享参考文件在 5 个技能间内容摘要一致
+- [x] 7.5 新增断言：技能文件不得含 `input(` 或 `read -p`（避免拉低 TRACE 安全性信号）
+
+### 7.x 实测发现（gate 抓到的真实漂移）
+
+`vendored skill state machines match the schema` 这一断言在 2026-09-21 实测中**抓到了一条真实缺陷**：
+`video-factory-recover` 描述了状态转移语义（Running / Pending / Failed / Completed）但**未提及 ReviewReady**。
+按 §3.2 规格："技能描述状态迁移但未包含人工闸门所在的状态" 必须失败。这正是变更 5 存在的理由。
+**修法**：随上游 v1.0.2 一并修改 `video-factory-recover/SKILL.md`，把 ReviewReady 与 `Completed|ReworkReady` 的闸门写入恢复说明。本仓任务标记为上游依赖，**不**就地修改受管技能。
 
 ## 8. Upstream release and sync
 
