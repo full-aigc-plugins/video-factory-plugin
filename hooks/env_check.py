@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """SessionStart hook: report Video Factory readiness (node + ffmpeg). Advisory only."""
 from __future__ import annotations
-import json, shutil, sys
+
+import json
+import shutil
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """UserPromptSubmit hook: point video-assembly requests at the plugin commands. Advisory only."""
 from __future__ import annotations
-import json, re, sys
+
+import json
+import re
+import sys
 
 INTENT_RE = re.compile(r"视频工厂|自动剪辑|视频装配|合成视频|成片|剪辑任务|video\s*factory", re.IGNORECASE)
 
