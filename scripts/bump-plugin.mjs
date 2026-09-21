@@ -120,18 +120,24 @@ fs.writeFileSync(catalogPath, catalogText);
 
 // 2) 各仓 manifest
 const bumpPlain = (text) => text.replace(`"version": "${oldVersion}"`, `"version": "${newVersion}"`);
+// 仓库市场清单除 version 外还带发布钉死的 source.ref 与 CDN logo 地址；它们不跟着版本走，
+// sync-marketplaces 就会判定「未钉到 v<new>」并使发版失败（历史需另开 fix 提交补）。
+const bumpMarketplace = (text) => bumpPlain(text)
+  .replace(`"ref": "v${oldVersion}"`, `"ref": "v${newVersion}"`)
+  .replaceAll(`@v${oldVersion}/`, `@v${newVersion}/`);
 const bumpCodex = (text) => text.replace(/"version": "\d+\.\d+\.\d+(?:\+codex\.\d+)?"/, `"version": "${newVersion}+codex.${today}"`);
 
 for (const rel of plainManifestRels) {
   const manifest = path.join(repoDir, rel);
-  fs.writeFileSync(manifest, bumpPlain(fs.readFileSync(manifest, "utf8")));
+  const text = fs.readFileSync(manifest, "utf8");
+  fs.writeFileSync(manifest, rel === ".agents/plugins/marketplace.json" ? bumpMarketplace(text) : bumpPlain(text));
 }
 const codexManifest = path.join(repoDir, ".codex-plugin/plugin.json");
 fs.writeFileSync(codexManifest, bumpCodex(fs.readFileSync(codexManifest, "utf8")));
 
-// 3) 重新生成三平台清单 + 全量校验
-execFileSync(process.execPath, [path.join(root, "scripts/sync-marketplaces.mjs"), "--write"], { stdio: "inherit" });
-execFileSync(process.execPath, [path.join(root, "scripts/sync-marketplaces.mjs")], { stdio: "inherit" });
+// 3) 重新生成三平台清单 + 校验（限定到本次发布的插件：其他插件的在途发版不应阻塞本插件）
+execFileSync(process.execPath, [path.join(root, "scripts/sync-marketplaces.mjs"), "--write", `--plugin=${pluginId}`], { stdio: "inherit" });
+execFileSync(process.execPath, [path.join(root, "scripts/sync-marketplaces.mjs"), `--plugin=${pluginId}`], { stdio: "inherit" });
 
 // 4) 提交提示
 console.log(`

@@ -1,6 +1,6 @@
 {
   "name": "video-factory",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "Automatic video editing, composition, synchronized review, recovery, and verified media receipts.",
   "author": {
     "name": "Full Stack Skills / PartMe.AI"

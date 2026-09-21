@@ -2,7 +2,10 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, statSync } from 'node:fs';
 import { sha256File } from './hash.mjs';
 
-export async function collectMedia(path, { provenanceOk = false, timelineOk = false } = {}) {
+// provenanceOk/timelineOk stay absent when the caller cannot verify them. Absent means
+// "not checked" and is reported as NOT_RUN; an explicit false means "checked and
+// inconsistent" and is reported as FAIL. Collapsing both into false hid real failures.
+export async function collectMedia(path, { provenanceOk, timelineOk } = {}) {
   if (!existsSync(path) || !statSync(path).isFile()) throw new Error(`media artifact missing: ${path}`);
   const probe = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-print_format', 'json', '-show_format', '-show_streams', path], { encoding: 'utf8', maxBuffer: 1 << 24 }));
   const video = probe.streams?.find((stream) => stream.codec_type === 'video');

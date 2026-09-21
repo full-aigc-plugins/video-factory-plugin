@@ -29,7 +29,9 @@ export async function renderSegment({ source, profile, destination, descriptorKe
   const tempReceipt = await collectMedia(temp, { provenanceOk: true, timelineOk: true });
   if (!tempReceipt.decodeOk || !tempReceipt.hashVerified) throw new Error('segment verification failed');
   renameSync(temp, destination);
-  const collected = await collectMedia(destination);
+  // A receipt is a fully determined claim, so the flags verified against the temp file are
+  // carried onto the destination — renameSync moved the very bytes that were checked.
+  const collected = await collectMedia(destination, { provenanceOk: tempReceipt.provenanceOk, timelineOk: tempReceipt.timelineOk });
   const receipt = { ...collected, descriptorKey, bindingKey: segmentKey({ descriptorKey, sha256: collected.sha256, bytes: collected.bytes }) };
   const receiptTemp = `${receiptPath}.tmp-${process.pid}`;
   writeFileSync(receiptTemp, `${JSON.stringify(receipt, null, 2)}\n`, { mode: 0o600 });

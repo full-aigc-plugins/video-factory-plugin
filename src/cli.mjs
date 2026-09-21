@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { quotePlan } from './approval.mjs';
-import { resolveEditDecision } from './edit-decision.mjs';
-import { collectMedia } from './media-collector.mjs';
-import { evaluateMedia } from './media-evaluator.mjs';
+import { resolveEditDecision, analyzeEditPolicy } from './edit-decision.mjs';
+import { collectMedia, verifyReceipt } from './media-collector.mjs';
+import { analyzeMedia } from './media-analysis.mjs';
+import { evaluateMedia, REQUIRED_GATE_IDS, ADVISORY_GATE_IDS } from './media-evaluator.mjs';
 import { acceptJob, recoverySummary, runApproved } from './orchestrator.mjs';
 import { canonicalHash, validateVideoPlan } from './plan.mjs';
 import { probeCapabilities } from './probe.mjs';
@@ -22,7 +23,7 @@ Commands:
   run <plan.json> --stage rough|final --approval <approval.json>
   review-sync <rough-cut> <shots.json>
   status <ledger.json>
-  evaluate <artifact> <plan.json>
+  evaluate <artifact> <plan.json> [--stage rough|final] [--ledger <job.json>] [--skip-detectors]
   accept <ledger.json> --decision approved|rejected [--note text]
   recover <ledger.json>
 `;
@@ -32,6 +33,22 @@ const flag = (argv, name, fallback = null) => {
   return index < 0 ? fallback : argv[index + 1] ?? true;
 };
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
+
+// Provenance is only establishable from the job ledger: it asserts that the artifact under
+// evaluation is the recorded one and that every segment receipt still verifies. Without a
+// ledger the gate stays absent so the evaluator reports NOT_RUN instead of a false FAIL.
+const resolveProvenance = async (ledgerPath, artifactPath, plan, clipCount) => {
+  if (!ledgerPath) return {};
+  const job = readLedger(String(ledgerPath));
+  if (!job.artifact) throw new Error('ledger records no artifact; provenance cannot be verified');
+  if (job.planHash !== canonicalHash(plan)) throw new Error('ledger does not match the evaluated plan');
+  const collected = await collectMedia(artifactPath);
+  const checks = await Promise.all(job.segments.map((segment) => (segment.receipt ? verifyReceipt(segment.receipt) : { ok: false })));
+  const artifactCheck = await verifyReceipt(job.artifact);
+  const matchesRecordedArtifact = collected.sha256 === job.artifact.sha256 && collected.bytes === job.artifact.bytes;
+  const complete = job.segments.length === clipCount && job.segments.every((segment) => typeof segment.receipt?.descriptorKey === 'string');
+  return { provenanceOk: artifactCheck.ok && matchesRecordedArtifact && complete && checks.every((check) => check.ok) };
+};
 
 export async function main(argv, io = { stdout: process.stdout, stderr: process.stderr }) {
   const [command] = argv;
@@ -90,14 +107,43 @@ export async function main(argv, io = { stdout: process.stdout, stderr: process.
     }
     if (command === 'evaluate') {
       const plan = validateVideoPlan(readJson(argv[2]));
-      const receipt = await collectMedia(argv[1]);
+      const artifactPath = resolve(argv[1]);
       const edit = resolveEditDecision(plan.editDecision).decision;
       const secondsPerTick = plan.editDecision.timebase.numerator / plan.editDecision.timebase.denominator;
       const durations = edit.clips.map((clip) => (clip.sourceOutTicks - clip.sourceInTicks) * secondsPerTick);
       const transitions = edit.clips.map((clip) => clip.transition);
       const stage = String(flag(argv, '--stage', 'final'));
-      const expected = { ...outputProfile(stage, plan.output), durationSeconds: effectiveAssemblyDuration(durations, transitions), requireAudio: plan.output.requireAudio };
-      io.stdout.write(`${JSON.stringify(evaluateMedia({ output: expected }, receipt), null, 2)}\n`); return 0;
+      const durationSeconds = effectiveAssemblyDuration(durations, transitions);
+      const expected = { ...outputProfile(stage, plan.output), durationSeconds, requireAudio: plan.output.requireAudio };
+      const receipt = await collectMedia(artifactPath);
+      const detectorsSkipped = argv.includes('--skip-detectors');
+      const evidence = detectorsSkipped
+        ? Object.fromEntries(['blackFrames', 'freezeFrames', 'silence', 'subtitleTiming', 'avSync'].map((id) => [id, 'SKIPPED']))
+        : analyzeMedia(artifactPath, {
+          durationSeconds,
+          hasAudio: receipt.hasAudio,
+          videoStartSeconds: receipt.videoStartSeconds,
+          audioStartSeconds: receipt.audioStartSeconds,
+          subtitlePath: null,
+        });
+      Object.assign(evidence, analyzeEditPolicy(plan.editDecision));
+      const scores = evaluateMedia({ output: expected }, {
+        ...receipt,
+        // Derived from the plan, not asserted by the caller, so it holds even without a ledger.
+        timelineOk: Math.abs(receipt.durationSeconds - durationSeconds) <= 0.15,
+        ...await resolveProvenance(flag(argv, '--ledger', ''), artifactPath, plan, edit.clips.length),
+      }, evidence, 'unlabeled', { detectorsSkipped });
+      io.stdout.write(`${JSON.stringify(scores, null, 2)}\n`);
+      const notRun = scores.gates.filter((item) => item.status === 'NOT_RUN');
+      for (const gate of notRun.filter((item) => REQUIRED_GATE_IDS.includes(item.id))) {
+        io.stderr.write(`unverified required gate "${gate.id}": ${
+          gate.id === 'provenance'
+            ? 'pass --ledger <job.json> from the approved run to verify segment receipts and artifact identity'
+            : 'no evidence producer for this invocation'}. The decision is capped at review.\n`);
+      }
+      const advisory = notRun.filter((item) => ADVISORY_GATE_IDS.includes(item.id)).map((item) => item.id);
+      if (advisory.length) io.stderr.write(`advisory gates without evidence: ${advisory.join(', ')} (advisory only; they do not cap the decision)\n`);
+      return 0;
     }
     if (command === 'episode-slice') {
       // words timeline (volcengine bigmodel ASR, one JSON per line) → keep segments + SRT + cutlist.
