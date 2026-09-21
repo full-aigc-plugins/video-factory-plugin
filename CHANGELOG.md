@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 - 2026-09-21
+
+- Fixed `evaluate` always returning `fail`: collapsed `undefined` evidence and explicit `false` were both passed to the required gates as `false`, so the documented judge entry could not return `pass` or `review`. Three-state gates now distinguish `NOT_RUN` (could not check) from `FAIL` (checked and inconsistent).
+- Derived the timeline gate from the plan inside `evaluate`, so it holds without a ledger; provenance remains verifiable only when a job ledger is supplied via `--ledger`.
+- `--skip-detectors` marks the affected media gates `SKIPPED` rather than leaving them `NOT_RUN`, with the decision capped at `review` so model scores cannot advance state.
+- `evaluate` now invokes `analyzeMedia` + `analyzeEditPolicy` so the seven advisory gates with producers (blackFrames, freezeFrames, silence, subtitleTiming, avSync, duplicateShots, rhythm) are populated instead of all `NOT_RUN`.
+- `segment-renderer` carries the `provenanceOk`/`timelineOk` flags verified on the temp file through the atomic rename, so segment receipts remain valid against the schema that requires those booleans.
+- `bin/video-factory evaluate <artifact> <plan>` now returns `review` (with retrieval guidance for the still-unverifiable provenance gate) on a technically-correct artifact instead of `fail`.
+- 85 tests / 84 pass; the one failing test is the documented drift caught by the new gate (`video-factory-recover` describes states but omits `ReviewReady`) and is tracked in `openspec/changes/2026-09-21-repair-skill-reference-integrity/tasks.md` §7.x.
+- 6 OpenSpec change proposals introduced; all pass `openspec validate --changes --strict`.
+
 ## 0.1.5 - 2026-09-20
 
 - Replaced Codex-first public branding with host-neutral Video Factory identity in documentation and release artwork.
