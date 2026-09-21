@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 - 2026-09-22
+
+- `evaluate --target <image> --emit-evidence <dir>` emits a hashed evidence package (target + per-shot S##a/S##b frames + semantic-evidence.json) for the host agent to read; `--semantic-evidence <score.json>` validates a host-agent four-dimension rubric score (Composition/Lighting/Materials/Details, 0-3-3-3-1) and populates the `semanticConsistency` advisory gate. The CLI never calls a model, reads a credential, or makes a network request.
+- New `rounds` command and `src/round-snapshot.mjs`: per-round snapshots (score, gate digest, gap fingerprint) recorded at `accept`; regression detection (current < previous total); stagnation detection (best score unimproved for 2 rounds, or same gap fingerprint 2 rounds running). Advisory only — never auto-advances state, never auto-retries.
+- `skills/video-factory-harness/SKILL.md` gains §3a (semantic gate discipline), §3b (round-loop discipline), §3c (asset-sourcing ladder discipline).
+- `THIRD_PARTY_NOTICES.md` records the dream-loop (MIT) rubric provenance.
+- 101 tests / 100 pass; the one failure is the documented `video-factory-recover` omission of `ReviewReady` (upstream item, tracked in change 5 §7.x).
+
 ## 0.2.0 - 2026-09-21
 
 - Fixed `evaluate` always returning `fail`: collapsed `undefined` evidence and explicit `false` were both passed to the required gates as `false`, so the documented judge entry could not return `pass` or `review`. Three-state gates now distinguish `NOT_RUN` (could not check) from `FAIL` (checked and inconsistent).

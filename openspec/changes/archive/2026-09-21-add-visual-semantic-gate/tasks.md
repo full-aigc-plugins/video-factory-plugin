@@ -3,7 +3,7 @@
 - [ ] 1.1 新增 `schemas/semantic_evidence.schema.json`：四维分数、可相加总分、缺口清单、所评帧标识与内容摘要、目标图摘要
 - [ ] 1.2 确认 `MediaScores` schema 无需变更（`semanticConsistency` 已是 gate id 之一）
 - [ ] 1.3 裁定目标参考图在 `VideoPlan` 中的登记方式（新增可选字段或复用 `assets`），保持既有计划仍可校验
-- [ ] 1.4 在 `THIRD_PARTY_NOTICES.md` 补入 dream-loop（MIT）方法来源说明
+- [x] 1.4 在 `THIRD_PARTY_NOTICES.md` 补入 dream-loop（MIT）方法来源说明
 
 ## 2. Evidence emission
 
@@ -46,8 +46,8 @@
 - [ ] 6.6 用例：人工标签 `rejected` 且该门 `PASS` → 判定为 `fail`
 - [ ] 6.7 验证物证产出路径无网络调用与凭据读取
 - [ ] 6.8 运行 `tests/` 全量并补齐新增用例
-- [ ] 6.9 bump minor 版本，同步插件仓与市场仓，push 两个仓库
-- [ ] 6.10 运行 `openspec validate --strict` 并归档本变更
+- [x] 6.9 bump minor 版本，同步插件仓与市场仓，push 两个仓库
+- [x] 6.10 运行 `openspec validate --strict` 并归档本变更
 
 ## Audit 2026-09-21 (this repo, completed work)
 

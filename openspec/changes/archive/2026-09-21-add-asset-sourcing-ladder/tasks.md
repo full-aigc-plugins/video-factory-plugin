@@ -34,11 +34,11 @@
 
 ## 6. Skill and documentation
 
-- [ ] 6.1 `skills/video-factory-harness/SKILL.md` 落地阶梯纪律与交叉引用（插件本地，可立即生效）
+- [x] 6.1 `skills/video-factory-harness/SKILL.md` 落地阶梯纪律与交叉引用（插件本地，可立即生效）
 - [ ] 6.2 上游技能仓改写 `video-factory-plan` 正文并发布新 tag
 - [ ] 6.3 本仓执行 `skill_vendor.py update --source-ref video-factory-skills=<tag> --expected-sha <peeled-sha>`
 - [ ] 6.4 随 `skills.lock.json` 一起提交，通过受管技能检查
-- [ ] 6.5 在 `THIRD_PARTY_NOTICES.md` 补入 dream-loop（MIT）方法来源说明（与应用视觉门的变更共用一次登记）
+- [x] 6.5 在 `THIRD_PARTY_NOTICES.md` 补入 dream-loop（MIT）方法来源说明（与应用视觉门的变更共用一次登记）
 
 ## 7. Verification
 

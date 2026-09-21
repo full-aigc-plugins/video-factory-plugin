@@ -16,7 +16,8 @@
     "history": {"type": "array", "items": {"$ref": "#/$defs/history"}},
     "artifact": {"$ref": "#/$defs/mediaReceipt"},
     "scores": {"$ref": "#/$defs/mediaScores"},
-    "review": {"$ref": "#/$defs/review"}
+    "review": {"$ref": "#/$defs/review"},
+    "snapshots": {"type": "array", "items": {"$ref": "#/$defs/roundSnapshot"}}
   },
   "$defs": {
     "segment": {
@@ -113,6 +114,20 @@
       "properties": {
         "id": {"type": "string", "minLength": 1},
         "status": {"type": "string", "enum": ["PASS", "FAIL", "SKIPPED", "NOT_RUN"]}
+      }
+    },
+    "roundSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["round", "revision", "decision", "totalScore", "gateDigest", "gapFingerprint", "at"],
+      "properties": {
+        "round": {"type": "integer", "minimum": 1},
+        "revision": {"type": "integer", "minimum": 1},
+        "decision": {"type": "string", "minLength": 1},
+        "totalScore": {"type": "number"},
+        "gateDigest": {"type": "string"},
+        "gapFingerprint": {"type": "string"},
+        "at": {"type": "string", "minLength": 1}
       }
     }
   }

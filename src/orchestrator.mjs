@@ -6,6 +6,7 @@ import { analyzeEditPolicy, resolveEditDecision, validateEditDecision } from './
 import { effectiveAssemblyDuration, outputProfile, segmentKey } from './ffmpeg-compiler.mjs';
 import { renderFinal } from './final-renderer.mjs';
 import { failSegment, markSegment, newJob, pendingSegments, readLedger, recordHumanDecision, transition, writeLedger } from './job-ledger.mjs';
+import { recordRoundSnapshot, analyzeRounds } from './round-snapshot.mjs';
 import { evaluateMedia } from './media-evaluator.mjs';
 import { analyzeMedia } from './media-analysis.mjs';
 import { findMissingAssetRequirements, registerAssets, writeAssetRequirements } from './paths.mjs';
@@ -29,7 +30,16 @@ export async function acceptJob({ ledgerPath, decision, note = '' }) {
   if (!receiptCheck.ok) throw new Error(`artifact verification failed: ${receiptCheck.reason}`);
   const fresh = await collectMedia(job.artifact.path, { provenanceOk: job.artifact.provenanceOk, timelineOk: job.artifact.timelineOk });
   if (fresh.sha256 !== job.artifact.sha256 || fresh.bytes !== job.artifact.bytes || !fresh.decodeOk) throw new Error('artifact verification failed after decode');
-  const updated = recordHumanDecision(job, decision, note);
+  // Record a round snapshot before the human decision so cross-round regression and
+  // stagnation analysis can compare completed rounds. Advisory only — never advances state.
+  // totalScore is null here because the numeric rubric score lives in the host-agent
+  // semantic-evidence file, not in the ledger; regression/stagnation degrade to gate-digest
+  // comparison when totalScore is absent (design.md decision 3).
+  const withSnapshot = recordRoundSnapshot(job, {
+    gates: job.scores?.gates ?? [],
+    gaps: [],
+  });
+  const updated = recordHumanDecision(withSnapshot, decision, note);
   updated.review = { ...updated.review, verifiedSha256: fresh.sha256, verifiedAt: new Date().toISOString() };
   writeLedger(ledgerPath, updated);
   return updated;

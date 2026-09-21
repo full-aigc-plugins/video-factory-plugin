@@ -7,6 +7,7 @@ import { analyzeMedia } from './media-analysis.mjs';
 import { evaluateMedia, REQUIRED_GATE_IDS, ADVISORY_GATE_IDS } from './media-evaluator.mjs';
 import { emitEvidence, validateAndNormalize, scoreToGateStatus } from './semantic-evidence.mjs';
 import { acceptJob, recoverySummary, runApproved } from './orchestrator.mjs';
+import { analyzeRounds } from './round-snapshot.mjs';
 import { canonicalHash, validateVideoPlan } from './plan.mjs';
 import { probeCapabilities } from './probe.mjs';
 import { readLedger } from './job-ledger.mjs';
@@ -24,6 +25,7 @@ Commands:
   run <plan.json> --stage rough|final --approval <approval.json>
   review-sync <rough-cut> <shots.json>
   status <ledger.json>
+  rounds <ledger.json>
   evaluate <artifact> <plan.json> [--stage rough|final] [--ledger <job.json>] [--skip-detectors] [--target <image>] [--emit-evidence <dir>] [--semantic-evidence <score.json>]
   accept <ledger.json> --decision approved|rejected [--note text]
   recover <ledger.json>
@@ -100,6 +102,23 @@ export async function main(argv, io = { stdout: process.stdout, stderr: process.
     if (command === 'status' || command === 'recover') {
       const job = readLedger(argv[1]);
       io.stdout.write(`${JSON.stringify(command === 'status' ? job : recoverySummary(job), null, 2)}\n`); return 0;
+    }
+    if (command === 'rounds') {
+      const job = readLedger(argv[1]);
+      const analysis = analyzeRounds(job);
+      io.stdout.write(`${JSON.stringify({
+        state: job.state,
+        snapshots: analysis.snapshots,
+        regression: analysis.regression,
+        stagnation: analysis.stagnation,
+      }, null, 2)}\n`);
+      if (analysis.stagnation.stagnated) {
+        io.stderr.write(`stagnation: ${analysis.stagnation.reason}. Stop tweaking; step back and rethink the approach, or ask the human to weigh in.\n`);
+      }
+      if (analysis.regression.regressed) {
+        io.stderr.write(`regression: score dropped from ${analysis.regression.previous} to ${analysis.regression.current}\n`);
+      }
+      return 0;
     }
     if (command === 'accept') {
       const ledgerPath = resolve(argv[1]);
