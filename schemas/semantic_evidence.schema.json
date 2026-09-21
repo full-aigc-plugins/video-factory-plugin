@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://partme.ai/schemas/video/semantic-evidence-1.0.0.json",
+  "title": "SemanticEvidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "target",
+    "frames",
+    "score",
+    "gaps"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 2
+        }
+      }
+    },
+    "frames": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "path", "sha256"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(target|S[0-9]{2,4}[ab])$"
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["target", "shot-start", "shot-end"]
+          }
+        }
+      }
+    },
+    "score": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["composition", "lighting", "materials", "details", "total"],
+      "properties": {
+        "composition": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "lighting": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "materials": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "details": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "total": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 10
+        }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["dimension", "frame", "issue", "fix"],
+        "properties": {
+          "dimension": {
+            "type": "string",
+            "enum": ["composition", "lighting", "materials", "details"]
+          },
+          "frame": {
+            "type": "string",
+            "pattern": "^(target|S[0-9]{2,4}[ab])$"
+          },
+          "issue": {
+            "type": "string",
+            "minLength": 1
+          },
+          "fix": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

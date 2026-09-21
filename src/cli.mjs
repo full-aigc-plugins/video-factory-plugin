@@ -5,6 +5,7 @@ import { resolveEditDecision, analyzeEditPolicy } from './edit-decision.mjs';
 import { collectMedia, verifyReceipt } from './media-collector.mjs';
 import { analyzeMedia } from './media-analysis.mjs';
 import { evaluateMedia, REQUIRED_GATE_IDS, ADVISORY_GATE_IDS } from './media-evaluator.mjs';
+import { emitEvidence, validateAndNormalize, scoreToGateStatus } from './semantic-evidence.mjs';
 import { acceptJob, recoverySummary, runApproved } from './orchestrator.mjs';
 import { canonicalHash, validateVideoPlan } from './plan.mjs';
 import { probeCapabilities } from './probe.mjs';
@@ -23,7 +24,7 @@ Commands:
   run <plan.json> --stage rough|final --approval <approval.json>
   review-sync <rough-cut> <shots.json>
   status <ledger.json>
-  evaluate <artifact> <plan.json> [--stage rough|final] [--ledger <job.json>] [--skip-detectors]
+  evaluate <artifact> <plan.json> [--stage rough|final] [--ledger <job.json>] [--skip-detectors] [--target <image>] [--emit-evidence <dir>] [--semantic-evidence <score.json>]
   accept <ledger.json> --decision approved|rejected [--note text]
   recover <ledger.json>
 `;
@@ -127,6 +128,35 @@ export async function main(argv, io = { stdout: process.stdout, stderr: process.
           subtitlePath: null,
         });
       Object.assign(evidence, analyzeEditPolicy(plan.editDecision));
+
+      // semanticConsistency: emit target-image + per-shot frames for the host agent
+      // to read, then accept a score file back. Never calls a model; the host agent
+      // is the only thing that reads images or writes scores.
+      const targetPath = flag(argv, '--target', '');
+      const emitDir = flag(argv, '--emit-evidence', '');
+      const scorePath = flag(argv, '--semantic-evidence', '');
+      let semanticManifest = null;
+      let semanticStatus = 'NOT_RUN';
+      if (targetPath) {
+        const outDir = emitDir ? resolve(emitDir) : resolve(dirname(artifactPath), '.semantic-evidence');
+        try {
+          const emitted = emitEvidence({ artifact: artifactPath, target: resolve(targetPath), outputDir: outDir });
+          semanticManifest = emitted.manifest;
+          if (scorePath) {
+            const result = validateAndNormalize(resolve(scorePath), semanticManifest);
+            if (!result.ok) throw new Error(result.error);
+            semanticStatus = scoreToGateStatus(result.normalized);
+          } else {
+            io.stderr.write(`emitted semantic evidence to ${emitted.manifestPath}; rerun with --semantic-evidence <score.json> to populate semanticConsistency\n`);
+          }
+        } catch (error) {
+          io.stderr.write(`semantic evidence failed: ${error.message}; semanticConsistency stays NOT_RUN\n`);
+        }
+      } else if (scorePath) {
+        io.stderr.write(`--semantic-evidence ignored: --target is required to bind scores to emitted evidence\n`);
+      }
+      evidence.semanticConsistency = semanticStatus;
+
       const scores = evaluateMedia({ output: expected }, {
         ...receipt,
         // Derived from the plan, not asserted by the caller, so it holds even without a ledger.
