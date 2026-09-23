@@ -5,7 +5,7 @@ import { resolveEditDecision, analyzeEditPolicy } from './edit-decision.mjs';
 import { collectMedia, verifyReceipt } from './media-collector.mjs';
 import { analyzeMedia } from './media-analysis.mjs';
 import { evaluateMedia, REQUIRED_GATE_IDS, ADVISORY_GATE_IDS } from './media-evaluator.mjs';
-import { emitEvidence, validateAndNormalize, scoreToGateStatus } from './semantic-evidence.mjs';
+import { emitEvidence, validateAndNormalize, scoreToGateStatus, writeSemanticSummary } from './semantic-evidence.mjs';
 import { acceptJob, recoverySummary, runApproved } from './orchestrator.mjs';
 import { analyzeRounds } from './round-snapshot.mjs';
 import { canonicalHash, validateVideoPlan } from './plan.mjs';
@@ -25,7 +25,7 @@ Commands:
   run <plan.json> --stage rough|final --approval <approval.json>
   review-sync <rough-cut> <shots.json>
   status <ledger.json>
-  rounds <ledger.json>
+  rounds <ledger.json> [<ledger.json>...]   # 跨轮快照聚合：回归/停滞分析（按轮次顺序列台账）
   evaluate <artifact> <plan.json> [--stage rough|final] [--ledger <job.json>] [--skip-detectors] [--target <image>] [--emit-evidence <dir>] [--semantic-evidence <score.json>]
   accept <ledger.json> --decision approved|rejected [--note text]
   recover <ledger.json>
@@ -104,16 +104,19 @@ export async function main(argv, io = { stdout: process.stdout, stderr: process.
       io.stdout.write(`${JSON.stringify(command === 'status' ? job : recoverySummary(job), null, 2)}\n`); return 0;
     }
     if (command === 'rounds') {
-      const job = readLedger(argv[1]);
-      const analysis = analyzeRounds(job);
+      // One ledger = one round (ReviewReady → Completed|ReworkReady is terminal), so
+      // cross-round comparison needs several ledgers listed in round order.
+      const ledgers = argv.slice(1).filter(Boolean).map((path) => readLedger(resolve(path)));
+      const merged = ledgers.flatMap((job) => job.snapshots ?? []).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+      const analysis = analyzeRounds({ snapshots: merged });
       io.stdout.write(`${JSON.stringify({
-        state: job.state,
+        states: ledgers.map((job) => job.state),
         snapshots: analysis.snapshots,
         regression: analysis.regression,
         stagnation: analysis.stagnation,
       }, null, 2)}\n`);
       if (analysis.stagnation.stagnated) {
-        io.stderr.write(`stagnation: ${analysis.stagnation.reason}. Stop tweaking; step back and rethink the approach, or ask the human to weigh in.\n`);
+        io.stderr.write(`stagnation: ${analysis.stagnation.reason}. Stop tweaking; step back and rethink the approach (assets, shot roles, structure). If a second pass at an architectural change still stalls, record the human decision with accept --decision rejected to move this job to ReworkReady — no automatic retry or new round.\n`);
       }
       if (analysis.regression.regressed) {
         io.stderr.write(`regression: score dropped from ${analysis.regression.previous} to ${analysis.regression.current}\n`);
@@ -165,6 +168,8 @@ export async function main(argv, io = { stdout: process.stdout, stderr: process.
             const result = validateAndNormalize(resolve(scorePath), semanticManifest);
             if (!result.ok) throw new Error(result.error);
             semanticStatus = scoreToGateStatus(result.normalized);
+            const summaryPath = writeSemanticSummary(artifactPath, result.normalized, semanticManifest, resolve(scorePath));
+            io.stderr.write(`semantic score summary written to ${summaryPath}; accept will attach it to the round snapshot\n`);
           } else {
             io.stderr.write(`emitted semantic evidence to ${emitted.manifestPath}; rerun with --semantic-evidence <score.json> to populate semanticConsistency\n`);
           }

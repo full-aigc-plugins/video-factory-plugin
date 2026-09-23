@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 import {
   GAP_DIMENSIONS,
@@ -106,4 +109,31 @@ test('analyzeRounds composes regression and stagnation', () => {
   assert.equal(result.regression.regressed, true);
   assert.equal(result.stagnation.stagnated, true);
   assert.equal(result.stagnation.gapStreak >= 2, true);
+});
+
+test('rounds CLI aggregates snapshots across ledgers so regression actually fires', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'vf-rounds-multi-'));
+  const fp = gapFingerprint([{ dimension: 'lighting', frame: 'S01a' }]);
+  const ledger = (id, totalScore, at) => ({
+    schemaVersion: '1.0.0', id, revision: 2, state: 'Completed', planHash: 'a'.repeat(64), stage: 'final', segments: [], history: [],
+    snapshots: [{ round: 1, revision: 2, decision: 'review', totalScore, gateDigest: '', gapFingerprint: fp, at }],
+  });
+  const l1 = join(root, 'round1.json');
+  const l2 = join(root, 'round2.json');
+  writeFileSync(l1, JSON.stringify(ledger('J1', 8, '2026-09-23T00:00:00Z')));
+  writeFileSync(l2, JSON.stringify(ledger('J2', 6, '2026-09-23T01:00:00Z')));
+
+  let stdout = ''; let stderr = '';
+  const io = { stdout: { write: (t) => { stdout += t; } }, stderr: { write: (t) => { stderr += t; } } };
+  const { main } = await import('../src/cli.mjs');
+  assert.equal(await main(['rounds', l1, l2], io), 0);
+  const result = JSON.parse(stdout);
+  assert.equal(result.snapshots.length, 2);
+  assert.equal(result.regression.regressed, true);
+  assert.equal(result.regression.previous, 8);
+  assert.equal(result.regression.current, 6);
+  assert.equal(result.stagnation.stagnated, true);
+  assert.match(stderr, /stagnation: .*Stop tweaking/);
+  assert.match(stderr, /accept --decision rejected/);
+  assert.match(stderr, /regression: score dropped from 8 to 6/);
 });

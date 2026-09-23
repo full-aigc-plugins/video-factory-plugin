@@ -159,6 +159,30 @@ test('CLI evaluation fails provenance when the ledger does not describe this art
   assert.deepEqual(scores.failedRequired, ['provenance']);
 });
 
+test('human decision synthesis keeps NOT_RUN required gates at review', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'video-accept-synthesis-'));
+  const ledgerPath = join(root, 'job.json');
+  const artifactPath = join(root, 'final.mp4');
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=green:s=320x180:d=1:r=30', '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-shortest', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', artifactPath]);
+  const artifact = await collectMedia(artifactPath, { provenanceOk: true, timelineOk: true });
+  const base = {
+    schemaVersion: '1.0.0', id: 'J2', revision: 3, state: 'ReviewReady', planHash: 'a'.repeat(64), stage: 'final', segments: [], history: [], artifact,
+  };
+  // Case 1: an unverified REQUIRED gate must not be laundered into pass by approval.
+  writeFileSync(ledgerPath, JSON.stringify({ ...base,
+    scores: { schemaVersion: '1.0.0', decision: 'review', failedRequired: [], gates: [{ id: 'provenance', status: 'NOT_RUN' }], humanLabel: 'unlabeled' } }));
+  const out1 = capture();
+  assert.equal(await main(['accept', ledgerPath, '--decision', 'approved', '--note', 'looks fine'], out1.io), 0);
+  assert.equal(JSON.parse(out1.read().stdout).scores.decision, 'review');
+  // Case 2: all required gates verified → approval composes pass.
+  const ledger2 = join(root, 'job2.json');
+  writeFileSync(ledger2, JSON.stringify({ ...base, id: 'J3',
+    scores: { schemaVersion: '1.0.0', decision: 'review', failedRequired: [], gates: [{ id: 'provenance', status: 'PASS' }], humanLabel: 'unlabeled' } }));
+  const out2 = capture();
+  assert.equal(await main(['accept', ledger2, '--decision', 'approved', '--note', 'ok'], out2.io), 0);
+  assert.equal(JSON.parse(out2.read().stdout).scores.decision, 'pass');
+});
+
 test('CLI accept is the only path from ReviewReady to Completed', async () => {
   const root = mkdtempSync(join(tmpdir(), 'video-accept-'));
   const ledgerPath = join(root, 'job.json');

@@ -1,11 +1,24 @@
 # Changelog
 
+## 0.4.0 - 2026-09-23
+
+- Connected the semantic score to the round snapshot: `evaluate --semantic-evidence` now writes an `<artifact>.semantic.json` summary side file (total score, gap dimension/frame pairs, gap fingerprint, target + score-file hashes), and `accept` attaches it to the round snapshot. Regression and stagnation detection now see real scores instead of always firing with `NO_SCORE` — the 0.3.0 pipeline was previously inert in the real flow.
+- `rounds` now accepts several ledgers in round order (`rounds r1.json r2.json ...`) and aggregates their snapshots, since one ledger holds at most one completed round; cross-round regression/stagnation now actually triggers. Stagnation output ends with the escalation path (`accept --decision rejected` → `ReworkReady`, no automatic retry).
+- Human-decision synthesis now mirrors `evaluateMedia`: approving a job with an unverified (`NOT_RUN`) required gate records `review`, not `pass` — an approval can no longer launder a missing check into a pass.
+- Round snapshots carry `targetSha256` and `scoreFileSha256` so a judgment is traceable to the exact score file and target image (additive schema fields).
+- Marketplace catalog resynchronized (it lagged at 0.3.1 while manifests read 0.3.2); 105/105 Node tests, 8/8 strict OpenSpec validations.
+
 ## 0.3.2 - 2026-09-23
 
 - Select authenticated skill-source reads by repository owner: `full-aigc-skills` and `full-stack-skills` use separate, least-privilege environment tokens while unknown public owners remain anonymous.
 - Keep credentials out of command arguments, lockfiles, snapshots, logs, and persistent Git remotes by using a temporary `GIT_ASKPASS` transport with output redaction.
 - Fail explicitly when an owner is configured to require authentication but its token is unavailable; offline integrity checks remain credential-free.
 - Added seven credential-routing and secret-hygiene regression tests; the complete release gate passes 18/18 Python tests, 101/101 Node tests, online/offline vendor checks, and 8/8 strict OpenSpec validations.
+
+## 0.3.1 - 2026-09-23
+
+- Vendored `video-factory-skills` v1.0.2 and restored the recovery review gate in `video-factory-recover` (the `ReviewReady` omission flagged in the 0.3.0 notes is fixed upstream and re-synced here).
+- Synchronized all plugin version surfaces. Note: the marketplace catalog for this release was left at the previous version; corrected retroactively in 0.4.0.
 
 ## 0.3.0 - 2026-09-22
 

@@ -127,7 +127,9 @@
         "totalScore": {"type": "number"},
         "gateDigest": {"type": "string"},
         "gapFingerprint": {"type": "string"},
-        "at": {"type": "string", "minLength": 1}
+        "at": {"type": "string", "minLength": 1},
+        "targetSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "scoreFileSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
       }
     }
   }

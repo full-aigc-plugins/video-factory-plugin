@@ -10,6 +10,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateSchemaInstance } from './schema-lite.mjs';
+import { gapFingerprint } from './round-snapshot.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOTS_SCRIPT = join(ROOT, 'skills/video-shots/scripts/video-shots.mjs');
@@ -176,4 +177,34 @@ export function scoreToGateStatus(normalized) {
   // FAIL otherwise. NOT_RUN is reserved for absent/errored score.
   if (!normalized) return 'NOT_RUN';
   return normalized.score.total >= 8 ? 'PASS' : 'FAIL';
+}
+
+// Persist a summary of the validated score next to the artifact (like .receipt.json),
+// so `accept` can attach the real totalScore and gap fingerprint to its round snapshot
+// without re-validating. Only summaries are stored, never the review prose.
+export function writeSemanticSummary(artifactPath, normalized, manifest, scorePath) {
+  const gaps = (normalized.gaps ?? []).map((gap) => ({ dimension: gap.dimension, frame: gap.frame }));
+  const summary = {
+    schemaVersion: '1.0.0',
+    totalScore: normalized.score.total,
+    gaps,
+    gapFingerprint: gapFingerprint(gaps),
+    targetSha256: manifest.target.sha256,
+    scoreFileSha256: sha256File(scorePath),
+    at: new Date().toISOString(),
+  };
+  const summaryPath = `${artifactPath}.semantic.json`;
+  writeFileSync(summaryPath, `${JSON.stringify(summary, null, 2)}\n`);
+  return summaryPath;
+}
+
+// Tolerant read of the summary side file. Returns null when absent or unusable.
+export function readSemanticSummary(artifactPath) {
+  const summaryPath = `${artifactPath}.semantic.json`;
+  if (!existsSync(summaryPath)) return null;
+  try {
+    const summary = JSON.parse(readFileSync(summaryPath, 'utf8'));
+    if (typeof summary.totalScore !== 'number') return null;
+    return summary;
+  } catch { return null; }
 }

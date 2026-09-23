@@ -2,6 +2,7 @@ import { closeSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, wr
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateSchemaInstance } from './schema-lite.mjs';
+import { REQUIRED_GATE_IDS } from './media-evaluator.mjs';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const JOB_SCHEMA = JSON.parse(readFileSync(join(ROOT, 'schemas', 'video_job.schema.json'), 'utf8'));
@@ -51,6 +52,9 @@ export function recordHumanDecision(job, decision, note = '') {
   const target = decision === 'approved' ? 'Completed' : 'ReworkReady';
   const transitioned = transition(job, target, `human ${decision}`);
   const advisoryFailed = (job.scores?.gates ?? []).some((gate) => gate.status === 'FAIL' && !(job.scores?.failedRequired ?? []).includes(gate.id));
+  // Mirrors evaluateMedia's composition rule: an unverified REQUIRED gate caps the
+  // decision at review — a human approval must not launder NOT_RUN into pass.
+  const unverifiedRequired = (job.scores?.gates ?? []).some((gate) => REQUIRED_GATE_IDS.includes(gate.id) && gate.status === 'NOT_RUN');
   return {
     ...transitioned,
     revision: transitioned.revision + 1,
@@ -58,7 +62,7 @@ export function recordHumanDecision(job, decision, note = '') {
     scores: job.scores ? {
       ...job.scores,
       humanLabel: decision,
-      decision: decision === 'rejected' ? 'fail' : advisoryFailed ? 'review' : 'pass',
+      decision: decision === 'rejected' ? 'fail' : (advisoryFailed || unverifiedRequired) ? 'review' : 'pass',
     } : undefined,
   };
 }

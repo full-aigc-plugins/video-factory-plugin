@@ -43,9 +43,12 @@ export function gateDigest(gates = []) {
 
 // Append a round snapshot to the ledger's snapshots[] array.
 // Returns the updated ledger (does not mutate the input).
-export function recordRoundSnapshot(job, { totalScore, gates, gaps } = {}) {
+// targetSha256 / scoreFileSha256 carry the semantic-score traceability hashes
+// (visual-semantic-consistency spec: the ledger records which score and target
+// produced this judgment).
+export function recordRoundSnapshot(job, { totalScore, gates, gaps, targetSha256, scoreFileSha256 } = {}) {
   const snapshots = Array.isArray(job.snapshots) ? [...job.snapshots] : [];
-  snapshots.push({
+  const snapshot = {
     round: job.round ?? snapshots.length + 1,
     revision: job.revision ?? 1,
     decision: job.scores?.decision ?? 'unlabeled',
@@ -53,7 +56,10 @@ export function recordRoundSnapshot(job, { totalScore, gates, gaps } = {}) {
     gateDigest: gateDigest(gates ?? job.scores?.gates ?? []),
     gapFingerprint: gapFingerprint(gaps),
     at: new Date().toISOString(),
-  });
+  };
+  if (targetSha256) snapshot.targetSha256 = targetSha256;
+  if (scoreFileSha256) snapshot.scoreFileSha256 = scoreFileSha256;
+  snapshots.push(snapshot);
   return { ...job, snapshots };
 }
 

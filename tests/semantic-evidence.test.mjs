@@ -6,7 +6,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { main } from '../src/cli.mjs';
-import { emitEvidence, validateAndNormalize, scoreToGateStatus } from '../src/semantic-evidence.mjs';
+import { emitEvidence, validateAndNormalize, scoreToGateStatus, readSemanticSummary } from '../src/semantic-evidence.mjs';
+import { gapFingerprint } from '../src/round-snapshot.mjs';
+import { acceptJob } from '../src/orchestrator.mjs';
+import { collectMedia } from '../src/media-collector.mjs';
 
 const sha256File = (path) => createHash('sha256').update(readFileSync(path)).digest('hex');
 
@@ -140,4 +143,62 @@ test('evaluate with invalid --semantic-evidence keeps semanticConsistency NOT_RU
   const gate = scores.gates.find((g) => g.id === 'semanticConsistency');
   assert.equal(gate.status, 'NOT_RUN');
   assert.match(out.read().stderr, /semantic evidence failed/);
+});
+
+test('evaluate writes a semantic summary side file for the round snapshot', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'vf-se-summary-'));
+  const { mp4, png, planPath } = buildArtifacts(root);
+  const outDir = join(root, 'evidence');
+  const { manifest } = emitEvidence({ artifact: mp4, target: png, outputDir: outDir });
+  const sha = sha256File(png);
+  const scorePath = join(root, 'score.json');
+  writeFileSync(scorePath, JSON.stringify({
+    schemaVersion: '1.0.0',
+    target: { path: 'target.png', sha256: sha, width: 640, height: 360 },
+    frames: manifest.frames.map((entry) => ({ id: entry.id, path: entry.path, sha256: entry.sha256, kind: entry.kind })),
+    score: { composition: 2, lighting: 2, materials: 2, details: 1, total: 7 },
+    gaps: [{ dimension: 'lighting', frame: 'S01a', issue: 'dark', fix: 'light' }],
+  }));
+
+  const out = capture();
+  assert.equal(await main(['evaluate', mp4, planPath, '--target', png, '--emit-evidence', outDir, '--semantic-evidence', scorePath], out.io), 0);
+  assert.match(out.read().stderr, /semantic score summary written to .*\.semantic\.json/);
+
+  const summary = readSemanticSummary(mp4);
+  assert.ok(summary, 'summary side file missing');
+  assert.equal(summary.totalScore, 7);
+  assert.equal(summary.gaps.length, 1);
+  assert.equal(summary.gaps[0].dimension, 'lighting');
+  assert.equal(summary.targetSha256, sha);
+  assert.equal(summary.scoreFileSha256, sha256File(scorePath));
+  assert.match(summary.gapFingerprint, /^[a-f0-9]{16}$/);
+});
+
+test('acceptJob attaches the semantic summary to the round snapshot', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'vf-se-accept-'));
+  const artifactPath = join(root, 'final.mp4');
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=green:s=320x180:d=1:r=30', '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-shortest', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', artifactPath]);
+  const artifact = await collectMedia(artifactPath, { provenanceOk: true, timelineOk: true });
+  const targetSha = 'a'.repeat(64);
+  const scoreSha = 'b'.repeat(64);
+  writeFileSync(`${artifactPath}.semantic.json`, JSON.stringify({
+    schemaVersion: '1.0.0', totalScore: 8.5,
+    gaps: [{ dimension: 'details', frame: 'S01b' }],
+    gapFingerprint: gapFingerprint([{ dimension: 'details', frame: 'S01b' }]),
+    targetSha256: targetSha, scoreFileSha256: scoreSha, at: new Date().toISOString(),
+  }));
+  const ledgerPath = join(root, 'job.json');
+  writeFileSync(ledgerPath, JSON.stringify({
+    schemaVersion: '1.0.0', id: 'J1', revision: 3, state: 'ReviewReady', planHash: 'a'.repeat(64), stage: 'final', segments: [], history: [],
+    artifact,
+    scores: { schemaVersion: '1.0.0', decision: 'review', failedRequired: [], gates: [], humanLabel: 'unlabeled' },
+  }));
+
+  const updated = await acceptJob({ ledgerPath, decision: 'approved', note: 'ok' });
+  const snapshot = updated.snapshots[0];
+  assert.equal(snapshot.totalScore, 8.5);
+  assert.equal(snapshot.gapFingerprint, gapFingerprint([{ dimension: 'details', frame: 'S01b' }]));
+  assert.equal(snapshot.targetSha256, targetSha);
+  assert.equal(snapshot.scoreFileSha256, scoreSha);
+  assert.equal(updated.state, 'Completed');
 });

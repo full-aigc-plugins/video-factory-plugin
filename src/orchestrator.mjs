@@ -7,6 +7,7 @@ import { effectiveAssemblyDuration, outputProfile, segmentKey } from './ffmpeg-c
 import { renderFinal } from './final-renderer.mjs';
 import { failSegment, markSegment, newJob, pendingSegments, readLedger, recordHumanDecision, transition, writeLedger } from './job-ledger.mjs';
 import { recordRoundSnapshot, analyzeRounds } from './round-snapshot.mjs';
+import { readSemanticSummary } from './semantic-evidence.mjs';
 import { evaluateMedia } from './media-evaluator.mjs';
 import { analyzeMedia } from './media-analysis.mjs';
 import { findMissingAssetRequirements, registerAssets, writeAssetRequirements } from './paths.mjs';
@@ -32,12 +33,16 @@ export async function acceptJob({ ledgerPath, decision, note = '' }) {
   if (fresh.sha256 !== job.artifact.sha256 || fresh.bytes !== job.artifact.bytes || !fresh.decodeOk) throw new Error('artifact verification failed after decode');
   // Record a round snapshot before the human decision so cross-round regression and
   // stagnation analysis can compare completed rounds. Advisory only — never advances state.
-  // totalScore is null here because the numeric rubric score lives in the host-agent
-  // semantic-evidence file, not in the ledger; regression/stagnation degrade to gate-digest
-  // comparison when totalScore is absent (design.md decision 3).
+  // The numeric rubric score and gap list ride in on the summary side file that
+  // `evaluate --semantic-evidence` wrote next to the artifact; without it the snapshot
+  // degrades to NO_SCORE and regression/stagnation fall back to gate-digest comparison.
+  const semantic = readSemanticSummary(job.artifact.path);
   const withSnapshot = recordRoundSnapshot(job, {
+    totalScore: semantic?.totalScore,
     gates: job.scores?.gates ?? [],
-    gaps: [],
+    gaps: semantic?.gaps ?? [],
+    targetSha256: semantic?.targetSha256,
+    scoreFileSha256: semantic?.scoreFileSha256,
   });
   const updated = recordHumanDecision(withSnapshot, decision, note);
   updated.review = { ...updated.review, verifiedSha256: fresh.sha256, verifiedAt: new Date().toISOString() };
