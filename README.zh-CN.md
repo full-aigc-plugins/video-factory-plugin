@@ -4,7 +4,7 @@
 
 > 本地优先的拉片分析、经批准的剪辑规划、确定性的 FFmpeg 合成，以及可核验的媒体回执——由受支持的编码智能体驱动。
 
-[![版本](https://img.shields.io/badge/version-0.3.1-blue)](https://github.com/full-aigc-plugins/video-factory-plugin/releases/tag/v0.3.1)
+[![版本](https://img.shields.io/badge/version-0.3.2-blue)](https://github.com/full-aigc-plugins/video-factory-plugin/releases/tag/v0.3.2)
 [![许可证](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
 [English](README.md) | [简体中文](README.zh-CN.md) · [安装](#安装) · [快速开始](#快速开始) · [命令契约](#命令契约) · [故障排查](#故障排查)
@@ -54,7 +54,7 @@
 |---|---|
 | 插件 ID | `video-factory` |
 | 宿主 | Codex CLI 或 ChatGPT 桌面应用 |
-| 当前版本 | `0.3.1` |
+| 当前版本 | `0.3.2` |
 | 插件清单 | `.codex-plugin/plugin.json` |
 | MCP 配置 | 无——本插件提供由 Skill 驱动的 CLI，而非 MCP 服务器 |
 | 主要语言 | Node.js（ESM），零运行依赖 |

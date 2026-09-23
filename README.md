@@ -4,7 +4,7 @@
 
 > Local-first shot analysis, approved edit planning, deterministic FFmpeg composition, and verified media receipts — driven from your supported coding agent.
 
-[![Version](https://img.shields.io/badge/version-0.3.1-blue)](https://github.com/full-aigc-plugins/video-factory-plugin/releases/tag/v0.3.1)
+[![Version](https://img.shields.io/badge/version-0.3.2-blue)](https://github.com/full-aigc-plugins/video-factory-plugin/releases/tag/v0.3.2)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
 [English](README.md) | [简体中文](README.zh-CN.md) · [Install](#installation) · [Quick start](#quick-start) · [Commands](#command-contract) · [Troubleshooting](#troubleshooting)
@@ -54,7 +54,7 @@ Rough cut / final cut (H.264 + AAC MP4) + receipts
 |---|---|
 | Plugin ID | `video-factory` |
 | Host | Codex CLI or ChatGPT desktop app |
-| Current version | `0.3.1` |
+| Current version | `0.3.2` |
 | Plugin manifest | `.codex-plugin/plugin.json` |
 | MCP configuration | none — this plugin exposes a Skill-driven CLI, not an MCP server |
 | Primary language | Node.js (ESM), zero runtime dependencies |

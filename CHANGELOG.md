@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2 - 2026-09-23
+
+- Select authenticated skill-source reads by repository owner: `full-aigc-skills` and `full-stack-skills` use separate, least-privilege environment tokens while unknown public owners remain anonymous.
+- Keep credentials out of command arguments, lockfiles, snapshots, logs, and persistent Git remotes by using a temporary `GIT_ASKPASS` transport with output redaction.
+- Fail explicitly when an owner is configured to require authentication but its token is unavailable; offline integrity checks remain credential-free.
+- Added seven credential-routing and secret-hygiene regression tests; the complete release gate passes 18/18 Python tests, 101/101 Node tests, online/offline vendor checks, and 8/8 strict OpenSpec validations.
+
 ## 0.3.0 - 2026-09-22
 
 - `evaluate --target <image> --emit-evidence <dir>` emits a hashed evidence package (target + per-shot S##a/S##b frames + semantic-evidence.json) for the host agent to read; `--semantic-evidence <score.json>` validates a host-agent four-dimension rubric score (Composition/Lighting/Materials/Details, 0-3-3-3-1) and populates the `semanticConsistency` advisory gate. The CLI never calls a model, reads a credential, or makes a network request.

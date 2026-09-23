@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import shutil
@@ -10,7 +11,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "vendor" / "skill_vendor.py"
@@ -256,6 +257,111 @@ class SkillVendorTest(unittest.TestCase):
         result = vendor("check", consumer, "--offline")
         self.assertEqual(result.returncode, 1)
         self.assertIn("missing from the tree", result.stdout)
+
+
+def load_vendor_module():
+    """Import skill_vendor so its credential contract can be checked directly."""
+    spec = importlib.util.spec_from_file_location("skill_vendor_under_test", SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+class SourceCredentialTest(unittest.TestCase):
+    """Read credentials are selected by source owner and stay in the transport layer."""
+
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.base = Path(self.temporary.name)
+        self.vendor = load_vendor_module()
+        self.token = "ghp_distinctive-token-value-123456"
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    def test_owner_is_read_from_every_supported_url_form(self) -> None:
+        cases = {
+            "https://github.com/full-aigc-skills/demo-skills.git": "full-aigc-skills",
+            "https://github.com/full-stack-skills/demo-skills.git": "full-stack-skills",
+            "https://github.com/partme-ai/baoyu-skills.git": "partme-ai",
+            "git@github.com:full-aigc-skills/demo-skills.git": "full-aigc-skills",
+            str(self.base / "upstream"): None,
+        }
+        for repo, expected in cases.items():
+            self.assertEqual(self.vendor.repo_owner(repo), expected, repo)
+
+    def test_credential_follows_owner_and_unmapped_owners_stay_anonymous(self) -> None:
+        with mock.patch.dict(os.environ, {"FULL_AIGC_SKILLS_SYNC_TOKEN": self.token}):
+            os.environ.pop("FULL_STACK_SKILLS_SYNC_TOKEN", None)
+            self.assertEqual(
+                self.vendor.credential_for("https://github.com/full-aigc-skills/demo-skills.git"),
+                self.token,
+            )
+            # A third owner has no token and must keep reading anonymously.
+            self.assertIsNone(
+                self.vendor.credential_for("https://github.com/partme-ai/baoyu-skills.git")
+            )
+            self.assertIsNone(self.vendor.credential_for(str(self.base / "upstream")))
+
+    def test_required_authentication_fails_instead_of_degrading_to_anonymous(self) -> None:
+        upstream = make_upstream(self.base, {"demo-one": "first demo skill gate"})
+        consumer = make_consumer(self.base, upstream, ["demo-one"])
+        lock_path = consumer / "skills.lock.json"
+        lock = json.loads(lock_path.read_text(encoding="utf-8"))
+        lock["sources"][0]["repo"] = "https://github.com/full-stack-skills/demo-skills.git"
+        lock_path.write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
+
+        with mock.patch.dict(os.environ, {"SKILL_VENDOR_REQUIRE_AUTH": "full-stack-skills"}):
+            os.environ.pop("FULL_STACK_SKILLS_SYNC_TOKEN", None)
+            result = vendor("update", consumer)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("requires authentication", result.stdout)
+
+    def test_offline_check_never_resolves_a_credential(self) -> None:
+        upstream = make_upstream(self.base, {"demo-one": "first demo skill gate"})
+        consumer = make_consumer(self.base, upstream, ["demo-one"])
+        self.assertEqual(vendor("update", consumer).returncode, 0)
+        # The configured owner has no token, so any credential lookup would fail;
+        # the offline check must still pass because it never reaches transport.
+        with mock.patch.dict(os.environ, {"SKILL_VENDOR_REQUIRE_AUTH": "full-aigc-skills"}):
+            result = vendor("check", consumer, "--offline")
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("match the lockfile", result.stdout)
+
+    def test_askpass_helper_carries_no_secret_and_keeps_it_out_of_argv(self) -> None:
+        workdir = self.base / "work"
+        workdir.mkdir()
+        environment = self.vendor.credential_env(self.token, workdir)
+        self.assertEqual(environment[self.vendor.TOKEN_ENV_VAR], self.token)
+
+        askpass = Path(environment["GIT_ASKPASS"])
+        self.assertTrue(askpass.is_file())
+        self.assertNotIn(self.token, askpass.read_text(encoding="utf-8"))
+        self.assertNotIn(self.token, environment["GIT_ASKPASS"])
+        self.assertEqual(environment.get("GIT_TERMINAL_PROMPT"), "0")
+
+    def test_credential_never_reaches_checkout_git_configuration(self) -> None:
+        upstream = make_upstream(self.base, {"demo-one": "first demo skill gate"})
+        workdir = self.base / "work"
+        workdir.mkdir()
+        environment = self.vendor.credential_env(self.token, workdir)
+        checkout = self.vendor.fetch_checkout(str(upstream), "v1.0.0", workdir, environment)
+
+        self.assertNotIn(self.token, (checkout / ".git" / "config").read_text(encoding="utf-8"))
+        remote = subprocess.run(
+            ["git", "-C", str(checkout), "remote", "get-url", "origin"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+        self.assertNotIn(self.token, remote)
+
+    def test_failure_output_is_redacted(self) -> None:
+        with mock.patch.dict(os.environ, {"FULL_AIGC_SKILLS_SYNC_TOKEN": self.token}):
+            redacted = self.vendor.redact(f"transport failed with {self.token} inline")
+        self.assertNotIn(self.token, redacted)
+        self.assertIn("***", redacted)
 
 
 if __name__ == "__main__":

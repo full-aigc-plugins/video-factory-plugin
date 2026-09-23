@@ -22,21 +22,101 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
-
 
 SKILL_NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 VERSION_TAG_RE = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
 COMMIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
+# Credentials are keyed by the source repository's owner, not by package name, so
+# adding another skill package under an already mapped owner needs no code change.
+OWNER_TOKEN_ENV = {
+    "full-aigc-skills": "FULL_AIGC_SKILLS_SYNC_TOKEN",
+    "full-stack-skills": "FULL_STACK_SKILLS_SYNC_TOKEN",
+}
+# Comma-separated owners whose sources must authenticate; a missing token then
+# fails loudly instead of silently degrading to an anonymous read.
+REQUIRE_AUTH_ENV = "SKILL_VENDOR_REQUIRE_AUTH"
+# Name of the environment variable the one-shot askpass helper reads at runtime.
+TOKEN_ENV_VAR = "SKILL_VENDOR_GIT_TOKEN"
+
+URL_WITH_SCHEME_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*://(?:[^/@]+@)?([^/:]+)/([^/]+)/")
+SCP_LIKE_RE = re.compile(r"^(?:[^/@]+@)?([^/:]+):([^/]+)/")
+
+# The helper carries no secret: it reads the token from the child process
+# environment, so the token never reaches argv or a persisted git configuration.
+ASKPASS_SCRIPT = (
+    "#!/bin/sh\n"
+    "case \"$1\" in\n"
+    "  *[Uu]sername*) printf '%s\\n' \"x-access-token\" ;;\n"
+    f"  *) printf '%s\\n' \"${{{TOKEN_ENV_VAR}}}\" ;;\n"
+    "esac\n"
+)
+
+
+def redact(message: object) -> str:
+    """Scrub any known credential value out of an outgoing message."""
+    text = str(message)
+    for name in (*set(OWNER_TOKEN_ENV.values()), TOKEN_ENV_VAR, "GH_TOKEN", "GITHUB_TOKEN"):
+        secret = os.environ.get(name, "").strip()
+        if len(secret) >= 8:
+            text = text.replace(secret, "***")
+    return text
+
 
 def fail(message: str) -> None:
-    print(f"ERROR: {message}")
+    print(f"ERROR: {redact(message)}")
+
+
+def repo_owner(repo: str) -> str | None:
+    """Return the owner segment of a git remote URL, or ``None`` when unparseable."""
+    match = URL_WITH_SCHEME_RE.match(repo.strip()) or SCP_LIKE_RE.match(repo.strip())
+    return match.group(2) if match else None
+
+
+def required_auth_owners() -> set[str]:
+    """Owners configured to require authentication."""
+    raw = os.environ.get(REQUIRE_AUTH_ENV, "")
+    return {item.strip() for item in raw.split(",") if item.strip()}
+
+
+def credential_for(repo: str) -> str | None:
+    """Select the credential for one source repository by its owner.
+
+    Unknown owners stay anonymous so public sources keep working. An owner listed
+    in ``SKILL_VENDOR_REQUIRE_AUTH`` without a token is an error rather than a
+    silent anonymous read, which would disguise an auth failure as a clean sync.
+    """
+    owner = repo_owner(repo)
+    if owner is None:
+        return None
+    variable = OWNER_TOKEN_ENV.get(owner)
+    token = os.environ.get(variable, "").strip() if variable else ""
+    if owner in required_auth_owners() and not token:
+        raise RuntimeError(
+            f"source owner '{owner}' requires authentication but {variable} is not set"
+        )
+    return token or None
+
+
+def credential_env(token: str | None, workdir: Path) -> dict[str, str]:
+    """Build a subprocess environment that authenticates without persisting secrets."""
+    environment = dict(os.environ)
+    environment["GIT_TERMINAL_PROMPT"] = "0"
+    if not token:
+        return environment
+    askpass = workdir / "askpass.sh"
+    if not askpass.exists():
+        askpass.write_text(ASKPASS_SCRIPT, encoding="utf-8")
+        askpass.chmod(0o700)
+    environment["GIT_ASKPASS"] = str(askpass)
+    environment[TOKEN_ENV_VAR] = token
+    return environment
 
 
 def hash_skill_dir(skill_dir: Path) -> str:
@@ -51,13 +131,14 @@ def hash_skill_dir(skill_dir: Path) -> str:
     return digest.hexdigest()
 
 
-def resolve_ref(repo: str, ref: str) -> str:
+def resolve_ref(repo: str, ref: str, env: dict[str, str] | None = None) -> str:
     """Resolve a branch or lightweight/annotated tag to its commit SHA."""
     result = subprocess.run(
         ["git", "ls-remote", repo, ref, f"{ref}^{{}}"],
         check=True,
         capture_output=True,
         text=True,
+        env=env,
     ).stdout.strip()
     if not result:
         raise RuntimeError(f"{repo}: ref '{ref}' not found")
@@ -66,33 +147,40 @@ def resolve_ref(repo: str, ref: str) -> str:
     for line in result.splitlines():
         candidate, _, remote_name = line.partition("\t")
         short = remote_name.removeprefix("refs/tags/").removeprefix("refs/heads/")
-        if short == f"{ref}^{{}}":
-            resolved = candidate
-        elif short == ref and resolved is None:
+        if short == f"{ref}^{{}}" or short == ref and resolved is None:
             resolved = candidate
     if resolved is None:
         raise RuntimeError(f"{repo}: could not resolve ref '{ref}'")
     return resolved
 
 
-def fetch_checkout(repo: str, ref: str, workdir: Path) -> Path:
-    """Fetch one pinned ref into an isolated checkout."""
+def fetch_checkout(repo: str, ref: str, workdir: Path, env: dict[str, str] | None = None) -> Path:
+    """Fetch one pinned ref into an isolated checkout.
+
+    The remote is registered with the plain URL and the credential travels in
+    ``env`` instead, so no secret is written into the checkout's git configuration.
+    """
     checkout = workdir / "checkout"
-    subprocess.run(["git", "init", "--quiet", str(checkout)], check=True)
-    subprocess.run(["git", "-C", str(checkout), "remote", "add", "origin", repo], check=True)
+    subprocess.run(["git", "init", "--quiet", str(checkout)], check=True, env=env)
+    subprocess.run(
+        ["git", "-C", str(checkout), "remote", "add", "origin", repo], check=True, env=env
+    )
     subprocess.run(
         ["git", "-C", str(checkout), "fetch", "--quiet", "--depth", "1", "origin", ref],
         check=True,
+        env=env,
     )
     subprocess.run(
         ["git", "-C", str(checkout), "checkout", "--quiet", "--detach", "FETCH_HEAD"],
         check=True,
+        env=env,
     )
     head = subprocess.run(
         ["git", "-C", str(checkout), "rev-parse", "HEAD"],
         check=True,
         capture_output=True,
         text=True,
+        env=env,
     ).stdout.strip()
     print(f"fetched {repo}@{ref} -> {head}")
     return checkout
@@ -215,8 +303,9 @@ def source_checkout(source: dict, overrides: dict[str, str], workdir: Path) -> t
         print(f"using local override for {package}: {local} @ {sha}")
         return local, sha
 
-    sha = resolve_ref(source["repo"], source["ref"])
-    checkout = fetch_checkout(source["repo"], source["ref"], workdir / package)
+    environment = credential_env(credential_for(source["repo"]), workdir)
+    sha = resolve_ref(source["repo"], source["ref"], environment)
+    checkout = fetch_checkout(source["repo"], source["ref"], workdir / package, environment)
     return checkout, sha
 
 
