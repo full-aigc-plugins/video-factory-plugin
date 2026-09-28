@@ -1,0 +1,52 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "video-factory",
+  "version": "0.4.0",
+  "description": "Automatic video editing, composition, synchronized review, recovery, and verified media receipts.",
+  "author": {
+    "name": "Full Stack Skills / PartMe.AI",
+    "url": "https://github.com/partme-ai"
+  },
+  "homepage": "https://github.com/full-aigc-plugins/video-factory-plugin",
+  "repository": "https://github.com/full-aigc-plugins/video-factory-plugin",
+  "license": "Apache-2.0",
+  "keywords": [
+    "video",
+    "editing",
+    "ffmpeg",
+    "reelbench",
+    "codex"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Video Factory",
+        "shortDescription": "Edit, compose, review, and verify videos",
+        "longDescription": "Use original ReelBench skills for shot analysis and synchronized review, then create approved rough and final edits with deterministic FFmpeg execution, recovery, and verified media receipts.",
+        "developerName": "Full Stack Skills / PartMe.AI",
+        "category": "Creativity",
+        "capabilities": [
+          "Interactive",
+          "Read",
+          "Write"
+        ],
+        "websiteURL": "https://github.com/full-aigc-plugins/video-factory-plugin",
+        "privacyPolicyURL": "https://github.com/full-aigc-plugins/video-factory-plugin/blob/main/PRIVACY.md",
+        "termsOfServiceURL": "https://github.com/full-aigc-plugins/video-factory-plugin/blob/main/TERMS.md",
+        "defaultPrompt": [
+          "Analyze this video into verified shots",
+          "Create an approved rough cut from these local assets",
+          "Evaluate this final video and verify its media receipt"
+        ],
+        "brandColor": "#285444",
+        "composerIcon": "./assets/composer-icon.png",
+        "logo": "./assets/logo-approved.png",
+        "logoDark": "./assets/logo-approved.png",
+        "screenshots": []
+      }
+    },
+    "ai.nanoco.nanoclaw": {
+      "agentName": "Video Factory"
+    }
+  }
+}
