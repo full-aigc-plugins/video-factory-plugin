@@ -1,32 +1,39 @@
 #!/usr/bin/env python3
-"""SessionStart hook: report Video Factory readiness (node + ffmpeg). Advisory only."""
+"""SessionStart hook: plugin self-integrity check (advisory).
+
+Contract, identical to the sibling check_*_intent / check_closeout hooks:
+only verifies files shipped with this package (and the interpreter version
+the hook itself needs); external apps, third-party CLIs and credentials are
+first-use setup owned by the skills. Everything intact -> print nothing,
+exit 0. Something missing -> one warning line, still exit 0. Any stdin
+(including malformed) is tolerated and never blocks a session.
+"""
 from __future__ import annotations
 
 import json
-import shutil
 import sys
 from pathlib import Path
 
 ROOT = next((c for c in Path(__file__).resolve().parents if (c / "plugin.json").is_file()), Path(__file__).resolve().parents[1])
 
+
 def main() -> int:
-    lines = [f"python3: {sys.version.split()[0]}"]
-    node = shutil.which("node")
-    lines.append(f"node: {node or '未找到（装配管线必需）'}")
-    ff = shutil.which("ffmpeg") and shutil.which("ffprobe")
-    lines.append("ffmpeg/ffprobe: 就绪" if ff else "ffmpeg/ffprobe: 未找到（媒体校验与合成必需）")
-    cli = ROOT / "scripts" / "cli.mjs"
-    lines.append("factory CLI: 就绪" if cli.is_file() else "factory CLI: 缺失")
+    problems: list[str] = []
+    if not (ROOT / "scripts" / "cli.mjs").is_file():
+        problems.append("factory CLI 脚本缺失（包不完整）")
+    if problems:
+        print("视频工厂环境告警：" + "；".join(problems))
+    # Drain the hook payload so the host never sees a broken pipe.
     try:
         sys.stdin.read()
-    except Exception:
+    except (OSError, ValueError, UnicodeDecodeError):
         pass
-    print("视频工厂插件环境：" + "；".join(lines))
     return 0
+
 
 if __name__ == "__main__":
     try:
         json.load(sys.stdin)
-    except Exception:
+    except (ValueError, OSError):
         pass
     sys.exit(main())
