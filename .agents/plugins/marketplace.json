@@ -22,7 +22,7 @@
       "interface": {
         "displayName": "Video Factory",
         "shortDescription": "Edit, compose, review, and verify videos",
-        "logo": "https://cdn.jsdelivr.net/gh/full-aigc-plugins/video-factory-plugin@v0.4.0/assets/logo-approved.png"
+        "logo": "https://cdn.jsdelivr.net/gh/full-aigc-plugins/video-factory-plugin@v0.5.0/assets/logo-approved.png"
       }
     }
   ]
