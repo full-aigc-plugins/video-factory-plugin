@@ -1,0 +1,33 @@
+{
+  "name": "@partme-dsh/video-factory",
+  "version": "0.5.0",
+  "description": "Automatic video editing, composition, synchronized review, recovery, and verified media receipts.",
+  "type": "module",
+  "main": "lib/index.js",
+  "icon": "./icon.png",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "cordis.patch.yml",
+    "lib/index.js",
+    "icon.svg",
+    "icon.png",
+    "README.md"
+  ],
+  "license": "Apache-2.0",
+  "keywords": [
+    "video",
+    "editing",
+    "ffmpeg",
+    "reelbench",
+    "codex"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}
