@@ -14,5 +14,6 @@
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
-  }
+  },
+  "icon": "./dsh/icon.png"
 }
