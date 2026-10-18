@@ -1,5 +1,5 @@
 {
-  "name": "@partme-dsh/video-factory",
+  "name": "video-factory",
   "version": "0.5.0",
   "description": "Automatic video editing, composition, synchronized review, recovery, and verified media receipts.",
   "type": "module",
@@ -31,5 +31,6 @@
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
-  }
+  },
+  "private": true
 }
