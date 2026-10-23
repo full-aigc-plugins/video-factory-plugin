@@ -1,7 +1,7 @@
 {
   "name": "partme-ai-video-factory",
   "interface": {
-    "displayName": "Video Factory"
+    "displayName": "Auto Video Editing · Video Factory"
   },
   "plugins": [
     {
@@ -9,20 +9,20 @@
       "source": {
         "source": "url",
         "url": "https://github.com/full-aigc-plugins/video-factory-plugin.git",
-        "ref": "v0.5.1"
+        "ref": "v0.4.0"
       },
       "policy": {
         "installation": "AVAILABLE",
         "authentication": "ON_USE"
       },
       "category": "Creativity",
-      "version": "0.5.1",
-      "description": "Automatic video editing, composition, synchronized review, recovery, and verified media receipts.",
-      "icon": "https://cdn.jsdelivr.net/gh/full-aigc-plugins/video-factory-plugin@v0.5.1/assets/logo-approved.png",
+      "version": "0.4.0",
+      "description": "Shot analysis, edit decisions, rough and final cut approval, composition and media receipt verification.",
+      "icon": "https://cdn.jsdelivr.net/gh/full-aigc-plugins/video-factory-plugin@v0.4.0/assets/logo-approved.png",
       "interface": {
-        "displayName": "Video Factory",
-        "shortDescription": "Edit, compose, review, and verify videos",
-        "logo": "https://cdn.jsdelivr.net/gh/full-aigc-plugins/video-factory-plugin@v0.5.1/assets/logo-approved.png"
+        "displayName": "Auto Video Editing · Video Factory",
+        "shortDescription": "Shot analysis, rough/final cut approval, composition and receipts",
+        "logo": "https://cdn.jsdelivr.net/gh/full-aigc-plugins/video-factory-plugin@v0.4.0/assets/logo-approved.png"
       }
     }
   ]

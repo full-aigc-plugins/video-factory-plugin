@@ -1,7 +1,7 @@
 {
   "name": "video-factory",
-  "version": "0.5.1+codex.20261018",
-  "description": "Automatic video editing, composition, synchronized review, recovery, and verified media receipts.",
+  "version": "0.4.0",
+  "description": "Shot analysis, edit decisions, rough and final cut approval, composition and media receipt verification.",
   "author": {
     "name": "Full Stack Skills / PartMe.AI",
     "url": "https://github.com/partme-ai"
@@ -18,8 +18,8 @@
   ],
   "skills": "./skills/",
   "interface": {
-    "displayName": "Video Factory",
-    "shortDescription": "Edit, compose, review, and verify videos",
+    "displayName": "Auto Video Editing · Video Factory",
+    "shortDescription": "Shot analysis, rough/final cut approval, composition and receipts",
     "longDescription": "Use original ReelBench skills for shot analysis and synchronized review, then create approved rough and final edits with deterministic FFmpeg execution, recovery, and verified media receipts.",
     "developerName": "Full Stack Skills / PartMe.AI",
     "category": "Creativity",
@@ -37,9 +37,10 @@
       "Evaluate this final video and verify its media receipt"
     ],
     "brandColor": "#285444",
-    "composerIcon": "./assets/composer-icon.png",
+    "composerIcon": "./assets/logo-approved.png",
     "logo": "./assets/logo-approved.png",
     "logoDark": "./assets/logo-approved.png",
-    "screenshots": []
+    "screenshots": [],
+    "composerIconDark": "./assets/logo-approved.png"
   }
 }
