@@ -1,7 +1,7 @@
 {
   "name": "video-factory",
   "version": "0.4.0",
-  "description": "Shot analysis, edit decisions, rough and final cut approval, composition and media receipt verification.",
+  "description": "拉片分析、剪辑决策、粗剪与精剪审批、合成与媒体回执校验。",
   "author": {
     "name": "Full Stack Skills / PartMe.AI"
   },
@@ -13,8 +13,8 @@
     "composition"
   ],
   "interface": {
-    "displayName": "Video Factory · Auto Video Editing",
-    "shortDescription": "Shot analysis, rough/final cut approval, composition and receipts",
+    "displayName": "Video（自动剪辑成片）",
+    "shortDescription": "拉片、粗剪精剪审批、合成与媒体回执",
     "longDescription": "Automatic editing for coding agents: timeline assembly, video composition, synchronized review, recovery, and verified media receipts.",
     "developerName": "Full Stack Skills / PartMe.AI",
     "websiteURL": "https://github.com/full-aigc-plugins/video-factory-plugin"
@@ -32,5 +32,11 @@
       "command": "python3 ./hooks/check_factory_intent.py",
       "timeout": 15
     }
-  ]
+  ],
+  "displayName_i18n": {
+    "zh-CN": "Video（自动剪辑成片）"
+  },
+  "description_i18n": {
+    "zh-CN": "拉片分析、剪辑决策、粗剪与精剪审批、合成与媒体回执校验。"
+  }
 }

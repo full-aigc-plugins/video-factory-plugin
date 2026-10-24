@@ -17,13 +17,14 @@
       },
       "category": "Creativity",
       "version": "0.4.0",
-      "description": "Shot analysis, edit decisions, rough and final cut approval, composition and media receipt verification.",
+      "description": "拉片分析、剪辑决策、粗剪与精剪审批、合成与媒体回执校验。",
       "icon": "https://cdn.jsdelivr.net/gh/full-aigc-plugins/video-factory-plugin@v0.4.0/assets/logo-approved.png",
       "interface": {
-        "displayName": "Video Factory · Auto Video Editing",
-        "shortDescription": "Shot analysis, rough/final cut approval, composition and receipts",
+        "displayName": "Video（自动剪辑成片）",
+        "shortDescription": "拉片、粗剪精剪审批、合成与媒体回执",
         "logo": "https://cdn.jsdelivr.net/gh/full-aigc-plugins/video-factory-plugin@v0.4.0/assets/logo-approved.png"
-      }
+      },
+      "displayName": "Video（自动剪辑成片）"
     }
   ]
 }

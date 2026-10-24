@@ -2,7 +2,7 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "video-factory",
   "version": "0.4.0",
-  "description": "Shot analysis, edit decisions, rough and final cut approval, composition and media receipt verification.",
+  "description": "拉片分析、剪辑决策、粗剪与精剪审批、合成与媒体回执校验。",
   "author": {
     "name": "Full Stack Skills / PartMe.AI",
     "url": "https://github.com/partme-ai"
@@ -49,5 +49,12 @@
     "ai.nanoco.nanoclaw": {
       "agentName": "Video Factory"
     }
+  },
+  "displayName": "Video（自动剪辑成片）",
+  "displayName_i18n": {
+    "zh-CN": "Video（自动剪辑成片）"
+  },
+  "description_i18n": {
+    "zh-CN": "拉片分析、剪辑决策、粗剪与精剪审批、合成与媒体回执校验。"
   }
 }
