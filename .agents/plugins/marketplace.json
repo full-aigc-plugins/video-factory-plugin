@@ -1,7 +1,7 @@
 {
   "name": "partme-ai-video-factory",
   "interface": {
-    "displayName": "Auto Video Editing · Video Factory"
+    "displayName": "Video Factory · Auto Video Editing"
   },
   "plugins": [
     {
@@ -20,7 +20,7 @@
       "description": "Shot analysis, edit decisions, rough and final cut approval, composition and media receipt verification.",
       "icon": "https://cdn.jsdelivr.net/gh/full-aigc-plugins/video-factory-plugin@v0.4.0/assets/logo-approved.png",
       "interface": {
-        "displayName": "Auto Video Editing · Video Factory",
+        "displayName": "Video Factory · Auto Video Editing",
         "shortDescription": "Shot analysis, rough/final cut approval, composition and receipts",
         "logo": "https://cdn.jsdelivr.net/gh/full-aigc-plugins/video-factory-plugin@v0.4.0/assets/logo-approved.png"
       }

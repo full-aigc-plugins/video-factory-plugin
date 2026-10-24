@@ -1,8 +1,8 @@
 {
   "name": "video-factory",
-  "displayName": "Auto Video Editing · Video Factory",
+  "displayName": "Video Factory · Auto Video Editing",
   "displayName_i18n": {
-    "en": "Auto Video Editing · Video Factory"
+    "en": "Video Factory · Auto Video Editing"
   },
   "version": "0.4.0",
   "description": "Shot analysis, edit decisions, rough and final cut approval, composition and media receipt verification.",

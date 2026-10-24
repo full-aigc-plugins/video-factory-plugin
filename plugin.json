@@ -20,7 +20,7 @@
   "extensions": {
     "com.openai": {
       "interface": {
-        "displayName": "Auto Video Editing · Video Factory",
+        "displayName": "Video Factory · Auto Video Editing",
         "shortDescription": "Shot analysis, rough/final cut approval, composition and receipts",
         "longDescription": "Use original ReelBench skills for shot analysis and synchronized review, then create approved rough and final edits with deterministic FFmpeg execution, recovery, and verified media receipts.",
         "developerName": "Full Stack Skills / PartMe.AI",
