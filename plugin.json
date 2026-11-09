@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "video-factory",
-  "version": "0.4.0",
-  "description": "拉片分析、剪辑决策、粗剪与精剪审批、合成与媒体回执校验。",
+  "version": "0.5.2",
+  "description": "从拉片到成片：剪辑决策、粗剪/精剪审批、合成与媒体回执，关键步骤可回退。",
   "author": {
     "name": "Full Stack Skills / PartMe.AI",
     "url": "https://github.com/partme-ai"
@@ -20,8 +20,8 @@
   "extensions": {
     "com.openai": {
       "interface": {
-        "displayName": "Video Factory · Auto Video Editing",
-        "shortDescription": "Shot analysis, rough/final cut approval, composition and receipts",
+        "displayName": "Video（自动剪辑成片）",
+        "shortDescription": "从拉片到成片：剪辑决策、粗剪/精剪审批、合成与媒体回执，关键步骤可回退。",
         "longDescription": "Use original ReelBench skills for shot analysis and synchronized review, then create approved rough and final edits with deterministic FFmpeg execution, recovery, and verified media receipts.",
         "developerName": "Full Stack Skills / PartMe.AI",
         "category": "Creativity",
