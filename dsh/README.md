@@ -7,7 +7,7 @@ host manifest; Claude Code, Codex, ZCode and Kimi keep using those.
 ## Install
 
 ```sh
-dsh plugin --profile desktop add link:/Users/wandl/workspaces/workspace-agent-skills/full-aigc-plugins-repositories/video-factory-plugin/dsh
+dsh plugin --profile desktop add link:/path/to/video-factory-plugin
 ```
 
 ## What DSH gets

@@ -1,6 +1,6 @@
 {
   "name": "video-factory",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "private": true,
   "type": "module",
   "engines": {
@@ -12,8 +12,9 @@
   "main": "./dsh/lib/index.js",
   "dsh": {
     "bundle": {
-      "patch": "./cordis.patch.yml"
+      "patch": "./dsh/cordis.patch.yml"
     }
   },
-  "icon": "./dsh/icon.png"
+  "icon": "./dsh/icon.png",
+  "description": "Automatic video editing, composition, synchronized review, recovery, and verified media receipts."
 }
