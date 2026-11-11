@@ -1,6 +1,6 @@
 {
   "name": "video-factory",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "从拉片到成片：剪辑决策、粗剪/精剪审批、合成与媒体回执，关键步骤可回退。",
   "author": {
     "name": "Full Stack Skills / PartMe.AI"
